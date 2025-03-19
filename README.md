@@ -4,7 +4,7 @@ An implementation of deep research built using the [OpenAI Agents SDK](https://g
 
 Written entirely in Python and can either be run as a python module or via the command line.
 
-Compatible with any LLMs that use the OpenAI API protocol.
+Compatible with any LLMs that use the OpenAI API specs.
 
 ## Overview
 

@@ -1,3 +1,4 @@
+# See sample_output.txt for the console output from running this script
 import asyncio
 from app.manager import DeepResearchManager
 
@@ -20,8 +21,5 @@ report = asyncio.run(
     )
 )
 
-print(
-    "\n\nFINAL REPORT:\n"
-    "============\n\n"
-    f"{report.markdown}"
-)
+print("\n=== Final Report ===")
+print(report.markdown)

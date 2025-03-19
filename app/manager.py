@@ -78,11 +78,13 @@ class DeepResearchManager:
     def _check_constraints(self) -> bool:
         """Check if we've exceeded our constraints (max iterations or time)."""
         if self.iteration >= self.max_iterations:
+            self._log_message("\n=== Ending Research Loop ===")
             self._log_message(f"Reached maximum iterations ({self.max_iterations})")
             return False
         
         elapsed_minutes = (time.time() - self.start_time) / 60
         if elapsed_minutes >= self.max_time_minutes:
+            self._log_message("\n=== Ending Research Loop ===")
             self._log_message(f"Reached maximum time ({self.max_time_minutes} minutes)")
             return False
         

@@ -40,11 +40,8 @@ async def main() -> None:
         output_instructions=args.output_instructions
     )
 
-    print(
-        "\n\nFINAL REPORT:\n"
-        "============\n\n"
-        f"{report.markdown}"
-    )
+    print("\n=== Final Report ===")
+    print(report.markdown)
 
 if __name__ == "__main__":
     asyncio.run(main())
