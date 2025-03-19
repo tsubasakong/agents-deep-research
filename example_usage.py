@@ -20,4 +20,8 @@ report = asyncio.run(
     )
 )
 
-print(report.markdown)
+print(
+    "\n\nFINAL REPORT:\n"
+    "============\n\n"
+    f"{report.markdown}"
+)
