@@ -41,10 +41,11 @@ flowchart LR
     subgraph "Deep Research Loop"
         B["Knowledge<br>Gap Agent"] -->|"Current gaps<br>& objective"| C["Tool Selector<br>Agent"]
         C -->|"Tool queries<br>(run in parallel)"| D["Tool Agents<br>- Web Search<br>- Crawler<br>- Custom tools"]
-        D -->|"Summary of relevant<br>findings & learnings"| B
+        D -->|"New findings"| E["Observations<br>Agent"]
+        E --> |"Thoughts on findings<br>and research strategy"| B
     end
 
-    D --> E["Writer Agent<br>(final output<br>with references)"]
+    E --> F["Writer Agent<br>(final output<br>with references)"]
 ```
 
 ### DeepResearcher Flow
@@ -112,7 +113,7 @@ LLMs are configured and managed in the `app/llm_client.py` file
 
 1. Clone this repository:
    ```sh
-   git clone https://github.com/qx-labs/agents-sdk-deep-research.git
+   git clone https://github.com/qx-labs/agents-deep-research.git
    cd agents-sd-deep-research
    ```
 
@@ -177,7 +178,7 @@ python -m app.main --mode deep --query "Provide a comprehensive overview of quan
 #### Boolean Flags
 
 - `--verbose`: Prints the research progress to console
-- `--trace`: Traces the workflow on the OpenAI platform (only works for OpenAI models)
+- `--tracing`: Traces the workflow on the OpenAI platform (only works for OpenAI models)
 
 ## Trace Monitoring
 
@@ -193,8 +194,6 @@ If OpenAI models are used, the Deep Research assistant integrates with OpenAI's 
 ## Ways to Improve Speed and Output
 
 - [ ] Add caching (e.g. Redis) of scraped web pages to avoid duplication
-- [ ] Implement guardrails to nudge the researcher on from sub-topics that are already well covered
-- [ ] Implement tool usage tracking to prevent the researcher from calling the same tool across iterations - usage tracking is already implemented for the `IterativeResearcher`, but not used
 - [ ] Add more specialized research tools (e.g. Wikipedia search, academic paper search, data analysis etc.)
 
 ## Author

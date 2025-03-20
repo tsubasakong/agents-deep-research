@@ -1,13 +1,117 @@
 from __future__ import annotations
 import asyncio
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional
 from agents import Runner, custom_span, gen_trace_id, trace
 from .agents.writer_agent import writer_agent
 from .agents.knowledge_gap_agent import KnowledgeGapOutput, knowledge_gap_agent
 from .agents.tool_selector_agent import AgentTask, AgentSelectionPlan, tool_selector_agent
+from .agents.observations_agent import observations_agent
 from .agents.tool_agents import TOOL_AGENTS, ToolAgentOutput
+from pydantic import BaseModel, Field
 
+
+class IterationData(BaseModel):
+    """Data for a single iteration of the research loop."""
+    gap: str = Field(description="The gap addressed in the iteration", default_factory=list)
+    tool_calls: List[str] = Field(description="The tool calls made", default_factory=list)
+    findings: List[str] = Field(description="The findings collected from tool calls", default_factory=list)
+    thought: List[str] = Field(description="The thinking done to reflect on the success of the iteration and next steps", default_factory=list)
+
+
+class Conversation(BaseModel):
+    """A conversation between the user and the iterative researcher."""
+    history: List[IterationData] = Field(description="The data for each iteration of the research loop", default_factory=list)
+
+    def add_iteration(self, iteration_data: Optional[IterationData] = None):
+        if iteration_data is None:
+            iteration_data = IterationData()
+        self.history.append(iteration_data)
+    
+    def set_latest_gap(self, gap: str):
+        self.history[-1].gap = gap
+
+    def set_latest_tool_calls(self, tool_calls: List[str]):
+        self.history[-1].tool_calls = tool_calls
+
+    def set_latest_findings(self, findings: List[str]):
+        self.history[-1].findings = findings
+
+    def set_latest_thought(self, thought: str):
+        self.history[-1].thought = thought
+
+    def get_latest_gap(self) -> str:
+        return self.history[-1].gap
+    
+    def get_latest_tool_calls(self) -> List[str]:
+        return self.history[-1].tool_calls
+    
+    def get_latest_findings(self) -> List[str]:
+        return self.history[-1].findings
+    
+    def get_latest_thought(self) -> str:
+        return self.history[-1].thought
+    
+    def get_all_findings(self) -> List[str]:
+        return [finding for iteration_data in self.history for finding in iteration_data.findings]
+
+    def compile_conversation_history(self) -> str:
+        """Compile the conversation history into a string."""
+        conversation = ""
+        for iteration_num, iteration_data in enumerate(self.history):
+            conversation += f"[ITERATION {iteration_num + 1}]\n\n"
+            if iteration_data.gap:
+                conversation += f"{self.get_task_string(iteration_num)}\n\n"
+            if iteration_data.tool_calls:
+                conversation += f"{self.get_action_string(iteration_num)}\n\n"
+            if iteration_data.findings:
+                conversation += f"{self.get_findings_string(iteration_num)}\n\n"
+            if iteration_data.thought:
+                conversation += f"{self.get_thought_string(iteration_num)}\n\n"
+
+        return conversation
+    
+    def get_task_string(self, iteration_num: int) -> str:
+        """Get the task for the current iteration."""
+        if self.history[iteration_num].gap:
+            return f"<task>\nAddress this knowledge gap in this iteration: {self.history[iteration_num].gap}\n</task>"
+        return ""
+    
+    def get_action_string(self, iteration_num: int) -> str:
+        """Get the action for the current iteration."""
+        if self.history[iteration_num].tool_calls:
+            return f"<action>\nCalling the following tools to address the knowledge gap:\n" \
+                f"{'\n'.join(self.history[iteration_num].tool_calls)}\n</action>"
+        return ""
+        
+    def get_findings_string(self, iteration_num: int) -> str:
+        """Get the findings for the current iteration."""
+        if self.history[iteration_num].findings:
+            return f"<findings>\n{'\n\n'.join(self.history[iteration_num].findings)}\n</findings>"
+        return ""
+    
+    def get_thought_string(self, iteration_num: int) -> str:
+        """Get the thought for the current iteration."""
+        if self.history[iteration_num].thought:
+            return f"<thought>\n{self.history[iteration_num].thought}\n</thought>"
+        return ""
+    
+    def latest_task_string(self) -> str:
+        """Get the latest task."""
+        return self.get_task_string(len(self.history) - 1)
+    
+    def latest_action_string(self) -> str:
+        """Get the latest action."""
+        return self.get_action_string(len(self.history) - 1)
+    
+    def latest_findings_string(self) -> str:
+        """Get the latest findings."""
+        return self.get_findings_string(len(self.history) - 1)
+    
+    def latest_thought_string(self) -> str:
+        """Get the latest thought."""
+        return self.get_thought_string(len(self.history) - 1)
+    
 
 class IterativeResearcher:
     """Manager for the iterative research workflow that conducts research on a topic or subtopic by running a continuous research loop."""
@@ -23,9 +127,7 @@ class IterativeResearcher:
         self.max_time_minutes: int = max_time_minutes
         self.start_time: float = None
         self.iteration: int = 0
-        self.historical_thinking: List[KnowledgeGapOutput] = []
-        self.historical_findings: List[str] = []
-        self.historical_tool_calls: List[str] = []
+        self.conversation: Conversation = Conversation()
         self.should_continue: bool = True
         self.verbose: bool = verbose
         self.tracing: bool = tracing
@@ -46,31 +148,34 @@ class IterativeResearcher:
             print(f"View trace: https://platform.openai.com/traces/{trace_id}")
             workflow_trace.start(mark_as_current=True)
 
-        self._log_message("Starting iterative research workflow...")
+        self._log_message("=== Starting Iterative Research Workflow ===")
         
         # Iterative research loop
         while self.should_continue and self._check_constraints():
             self.iteration += 1
             self._log_message(f"\n=== Starting Iteration {self.iteration} ===")
+
+            # Set up blank IterationData for this iteration
+            self.conversation.add_iteration()
             
-            # 1. Evaluate the current state of research
-            evaluation = await self._evaluate_state(query, background_context=background_context)
+            # 1. Evaluate current gaps in the research
+            evaluation: KnowledgeGapOutput = await self._evaluate_gaps(query, background_context=background_context)
             
             # Check if we should continue or break the loop
             if not evaluation.research_complete:
-                # 2. Select agents to address knowledge gaps
                 next_gap = evaluation.outstanding_gaps[0]
+
+                # 2. Select agents to address knowledge gap
                 selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
-                self.historical_tool_calls.extend([f"[Agent] {task.agent}: [Query] {task.query} / [Entity] {task.entity_website}" for task in selection_plan.tasks])
 
                 # 3. Run the selected agents to gather information
                 results: Dict[str, ToolAgentOutput] = await self._execute_tools(selection_plan.tasks)
-                for tool_output in results.values():
-                    self.historical_findings.append(tool_output.output)
-                # # 4. Update the draft with new information
+
+                # 4. Generate observations
+                observations: str = await self._generate_observations(query, background_context=background_context)
             else:
                 self.should_continue = False
-                self._log_message("IterativeResearcher flagged as having sufficient info to draft a response")
+                self._log_message("=== IterativeResearcher Marked As Complete - Finalizing Output ===")
         
         # Create final report
         report = await self._create_final_report(query, length=output_length, instructions=output_instructions)
@@ -98,19 +203,12 @@ class IterativeResearcher:
         
         return True
     
-    async def _evaluate_state(
+    async def _evaluate_gaps(
         self, 
         query: str,
         background_context: str = ""
     ) -> KnowledgeGapOutput:
         """Evaluate the current state of research and identify knowledge gaps."""
-        self._log_message("Evaluating current research state...")
-        
-        # Prepare input for the state evaluator
-        if not self.historical_thinking:
-            historical_thinking_str = "No previous evaluation available."
-        else:
-            historical_thinking_str = '\n\n'.join(item.model_dump_json() for item in self.historical_thinking)
 
         input_str = f"""
         Current Iteration Number: {self.iteration}
@@ -121,11 +219,8 @@ class IterativeResearcher:
 
         {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
 
-        PREVIOUS ANALYSES:
-        {historical_thinking_str}
-        
-        FINDINGS COLLECTED:
-        {'\n\n'.join(self.historical_findings) if self.historical_findings else "No findings available yet."}
+        HISTORY OF ACTIONS, FINDINGS AND THOUGHTS:
+        {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}        
         """
 
         result = await Runner.run(
@@ -134,11 +229,11 @@ class IterativeResearcher:
         )
         
         evaluation = result.final_output_as(KnowledgeGapOutput)
-        self._log_message(f"Identified {len(evaluation.outstanding_gaps)} knowledge gaps:\n" + '\n'.join(evaluation.outstanding_gaps))
-        self._log_message(f"Research complete: {evaluation.research_complete}")
-        
-        # Store the evaluation for the next iteration
-        self.historical_thinking.extend([evaluation])
+
+        if not evaluation.research_complete:
+            next_gap = evaluation.outstanding_gaps[0]
+            self.conversation.set_latest_gap(next_gap)
+            self._log_message(self.conversation.latest_task_string())
         
         return evaluation
     
@@ -149,7 +244,6 @@ class IterativeResearcher:
         background_context: str = ""
     ) -> AgentSelectionPlan:
         """Select agents to address the identified knowledge gap."""
-        self._log_message("Selecting appropriate agents for the knowledge gap...")
         
         input_str = f"""
         ORIGINAL QUERY:
@@ -159,6 +253,9 @@ class IterativeResearcher:
         {gap}
 
         {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
+
+        HISTORY OF ACTIONS, FINDINGS AND THOUGHTS:
+        {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}
         """
         
         result = await Runner.run(
@@ -167,15 +264,18 @@ class IterativeResearcher:
         )
         
         selection_plan = result.final_output_as(AgentSelectionPlan)
-        self._log_message(f"Selected {len(selection_plan.tasks)} agent tasks:\n" + '\n'.join([f"{task.agent}: {task.query} / {task.entity_website}" for task in selection_plan.tasks]))
+
+        # Add the tool calls to the conversation
+        self.conversation.set_latest_tool_calls([
+            f"[Agent] {task.agent} [Query] {task.query} [Entity] {task.entity_website if task.entity_website else 'null'}" for task in selection_plan.tasks
+        ])
+        self._log_message(self.conversation.latest_action_string())
         
         return selection_plan
     
     async def _execute_tools(self, tasks: List[AgentTask]) -> Dict[str, ToolAgentOutput]:
         """Execute the selected tools concurrently to gather information."""
         with custom_span("Execute Tool Agents"):
-            self._log_message("Executing tool agents to gather information...")
-            
             # Create a task for each agent
             async_tasks = []
             for task in tasks:
@@ -188,9 +288,14 @@ class IterativeResearcher:
                 gap, agent_name, result = await future
                 results[f"{agent_name}_{gap}"] = result
                 num_completed += 1
-                self._log_message(f"Tool execution progress: {num_completed}/{len(async_tasks)}")
-            
-            self._log_message("Tool execution completed")
+                self._log_message(f"<processing>\nTool execution progress: {num_completed}/{len(async_tasks)}\n</processing>")
+
+            # Add findings from the tool outputs to the conversation
+            findings = []
+            for tool_output in results.values():
+                findings.append(tool_output.output)
+            self.conversation.set_latest_findings(findings)
+
             return results
     
     async def _run_agent_task(self, task: AgentTask) -> tuple[str, str, ToolAgentOutput]:
@@ -218,7 +323,31 @@ class IterativeResearcher:
                 sources=[]
             )
             return task.gap, task.agent, error_output
-    
+        
+    async def _generate_observations(self, query: str, background_context: str = "") -> str:
+        """Generate observations from the current state of the research."""
+        self._log_message("Generating observations from the current state of the research...")
+        
+        input_str = f"""
+        ORIGINAL QUERY:
+        {query}
+
+        {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
+
+        HISTORY OF ACTIONS, FINDINGS AND THOUGHTS:
+        {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}
+        """
+        result = await Runner.run(
+            observations_agent,
+            input_str,
+        )
+
+        # Add the observations to the conversation
+        observations = result.final_output
+        self.conversation.set_latest_thought(observations)
+        self._log_message(self.conversation.latest_thought_string())
+        return observations
+
     async def _create_final_report(
             self, 
             query: str,
@@ -226,19 +355,19 @@ class IterativeResearcher:
             instructions: str = ""
         ) -> str:
         """Create the final response from the completed draft."""
-        self._log_message("Drafting final response...")
+        self._log_message("=== Drafting Final Response ===")
 
         length_str = f"* The full response should be approximately {length}.\n" if length else ""
         instructions_str = f"* {instructions}" if instructions else ""
         guidelines_str = ("\n\nGUIDELINES:\n" + length_str + instructions_str).strip('\n') if length or instructions else ""
 
         input_str = f"""
-        Provide a detailed response based on the query and findings below. {guidelines_str}
+        Provide a response based on the query and findings below with as much detail as possible. {guidelines_str}
 
         QUERY: {query}
 
         FINDINGS:
-        {'\n\n'.join(self.historical_findings) if self.historical_findings else "No findings available yet."}
+        {'\n\n'.join(self.conversation.get_all_findings()) or "No findings available yet."}
         """
 
         result = await Runner.run(
@@ -246,7 +375,7 @@ class IterativeResearcher:
             input_str,
         )
         
-        self._log_message("Final IterativeResearcher response created successfully")
+        self._log_message("Final response from IterativeResearcher created successfully")
         
         return result.final_output
     

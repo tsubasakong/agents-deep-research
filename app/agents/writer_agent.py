@@ -20,16 +20,15 @@ The Agent then:
 
 The WriterAgent defined here generates the final structured report in markdown format.
 """
-from pydantic import BaseModel
 from agents import Agent
-from ..llm_client import main_model
+from ..llm_client import reasoning_model
 from datetime import datetime
 
 PROMPT = (
     f"You are a senior researcher tasked with writing comprehensively answering a research query. Today's date is {datetime.now().strftime('%Y-%m-%d')}.\n"
     "You will be provided with the original query along with research findings put together by a research assistant.\n"
     "Your objective is to generate the final response in markdown format.\n"
-    "The response should be as lengthy and detailed as possible with the information provided.\n"
+    "The response should be as lengthy and detailed as possible with the information provided, focusing on answering the original query.\n"
     "In your final output, include references to the source URLs for all information and data gathered. "
     "This should be formatted in the form of a square numbered bracket next to the relevant information, "
     "followed by a list of URLs at the end of the response, per the example below.\n\n"
@@ -48,5 +47,5 @@ PROMPT = (
 writer_agent = Agent(
     name="WriterAgent",
     instructions=PROMPT,
-    model=main_model,
+    model=reasoning_model,
 )

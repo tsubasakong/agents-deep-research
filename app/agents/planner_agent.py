@@ -47,7 +47,7 @@ Your task is to:
 
 Guidelines:
 - Each section should cover a single topic/question that is independent of other sections
-- The key question for each section should include all relevant NAMES and URLs / DOMAIN NAMES related to the query so that the researcher has this context
+- The key question for each section should include both the NAME and DOMAIN NAME / WEBSITE (if available and applicable) if it is related to a company, product or similar
 - The background_context should not be more than 2 paragraphs
 - The background_context should be very specific to the query and include any information that is relevant for researchers across all sections of the report
 - The background_context should be draw only from web search or crawl results rather than prior knowledge (i.e. it should only be included if you have called tools)
