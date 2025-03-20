@@ -60,21 +60,21 @@ class Conversation(BaseModel):
         conversation = ""
         for iteration_num, iteration_data in enumerate(self.history):
             conversation += f"[ITERATION {iteration_num + 1}]\n\n"
+            if iteration_data.thought:
+                conversation += f"{self.get_thought_string(iteration_num)}\n\n"
             if iteration_data.gap:
                 conversation += f"{self.get_task_string(iteration_num)}\n\n"
             if iteration_data.tool_calls:
                 conversation += f"{self.get_action_string(iteration_num)}\n\n"
             if iteration_data.findings:
                 conversation += f"{self.get_findings_string(iteration_num)}\n\n"
-            if iteration_data.thought:
-                conversation += f"{self.get_thought_string(iteration_num)}\n\n"
 
         return conversation
     
     def get_task_string(self, iteration_num: int) -> str:
         """Get the task for the current iteration."""
         if self.history[iteration_num].gap:
-            return f"<task>\nAddress this knowledge gap in this iteration: {self.history[iteration_num].gap}\n</task>"
+            return f"<task>\nAddress this knowledge gap: {self.history[iteration_num].gap}\n</task>"
         return ""
     
     def get_action_string(self, iteration_num: int) -> str:
@@ -157,22 +157,22 @@ class IterativeResearcher:
 
             # Set up blank IterationData for this iteration
             self.conversation.add_iteration()
-            
-            # 1. Evaluate current gaps in the research
+
+            # 1. Generate observations
+            observations: str = await self._generate_observations(query, background_context=background_context)
+
+            # 2. Evaluate current gaps in the research
             evaluation: KnowledgeGapOutput = await self._evaluate_gaps(query, background_context=background_context)
             
             # Check if we should continue or break the loop
             if not evaluation.research_complete:
                 next_gap = evaluation.outstanding_gaps[0]
 
-                # 2. Select agents to address knowledge gap
+                # 3. Select agents to address knowledge gap
                 selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
 
-                # 3. Run the selected agents to gather information
+                # 4. Run the selected agents to gather information
                 results: Dict[str, ToolAgentOutput] = await self._execute_tools(selection_plan.tasks)
-
-                # 4. Generate observations
-                observations: str = await self._generate_observations(query, background_context=background_context)
             else:
                 self.should_continue = False
                 self._log_message("=== IterativeResearcher Marked As Complete - Finalizing Output ===")
@@ -326,8 +326,7 @@ class IterativeResearcher:
         
     async def _generate_observations(self, query: str, background_context: str = "") -> str:
         """Generate observations from the current state of the research."""
-        self._log_message("Generating observations from the current state of the research...")
-        
+                
         input_str = f"""
         ORIGINAL QUERY:
         {query}

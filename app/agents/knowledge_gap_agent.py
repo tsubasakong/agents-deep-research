@@ -43,6 +43,10 @@ Your task is to:
 3. If not, identify up to 3 knowledge gaps that need to be addressed in sequence in order to continue with research - these should be relevant to the original query
 
 Be specific in the gaps you identify and include relevant information as this will be passed onto another agent to process without additional context.
+
+You should output a JSON object with the following fields:
+- research_complete: bool - Whether the research and findings are complete enough to end the research loop
+- outstanding_gaps: List[str] - List of knowledge gaps that still need to be addressed
 """
 
 

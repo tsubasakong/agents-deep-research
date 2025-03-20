@@ -195,7 +195,7 @@ async def fetch_and_process_url(session: aiohttp.ClientSession, item: WebpageSni
         )
 
     try:
-        async with session.get(item.url, timeout=15) as response:
+        async with session.get(item.url, timeout=8) as response:
             if response.status == 200:
                 content = await response.text()
                 # Run html_to_text in a thread pool to avoid blocking
