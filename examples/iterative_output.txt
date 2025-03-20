@@ -90,9 +90,9 @@ Tool execution completed
 
 === Ending Research Loop ===
 Reached maximum iterations (5)
-Creating final report...
-Final report created successfully
-Research completed in 2 minutes and 41 seconds after 5 iterations.
+Drafting final response...
+Final IterativeResearcher response created successfully
+IterativeResearcher completed in 2 minutes and 41 seconds after 5 iterations.
 
 === Final Report ===
 # Plato: A Foundational Figure in Western Philosophy

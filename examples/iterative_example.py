@@ -1,8 +1,13 @@
-# See sample_output.txt for the console output from running this script
-import asyncio
-from app.manager import DeepResearchManager
+"""
+Example usage of the DeepResearcher to produce a report.
 
-manager = DeepResearchManager(
+See iterative_output.txt for the console output from running this script, and iterative_output.pdf for the final report
+"""
+
+import asyncio
+from app.iterative_research import IterativeResearcher
+
+manager = IterativeResearcher(
     max_iterations=5,
     max_time_minutes=10,
     verbose=True
@@ -22,4 +27,4 @@ report = asyncio.run(
 )
 
 print("\n=== Final Report ===")
-print(report.markdown)
+print(report)

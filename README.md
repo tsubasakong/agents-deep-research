@@ -1,25 +1,38 @@
-# Agentic Deep Research with OpenAI Agents SDK
+# Agentic Deep Research using the OpenAI Agents SDK
 
-An implementation of deep research built using the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python) which can conduct iterative research on complex topics.
+An implementation of deep research built using the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), designed to perform in-depth research on any given topic.
 
-Written entirely in Python and can either be run as a python module or via the command line.
+It employs a multi-agent architecture that works iteratively, continually refining its understanding of the topic and producing increasingly detailed and expansive insights that feed the final report.
 
-Compatible with any LLMs that use the OpenAI API specs.
+This is written entirely in Python. It can be run as a module or via the command line. 
+
+Designed to be extedible to use custom tools and 3rd party LLMs compatible with the OpenAI API spec.
 
 ## Overview
 
-This deep research implementation is designed to perform in-depth research on any given topic. It employs a multi-agent architecture that:
+This package has two modes of research:
 
-1. Identifies knowledge gaps in the current research
-2. Strategically selects the appropriate tools to fill those gaps
-3. Executes research actions through specialized agents
-4. Synthesizes findings into a comprehensive report
+- An `IterativeResearcher` which runs a continuous loop of research on a topic or sub-topic and drafts a report
+  - This is preferred and sufficient for shorter reports (up to 5 pages / 1,000 words)
+  - The user can specify constraints such as research depth, time limits, report length and formatting instructions
+- A `DeepResearcher` which runs a more thorough and structured process, first forming a report outline, and then running concurrent `IterativeResearcher` instances for each section of the report
+  - This is useful for longer reports (e.g. 20+ pages)
 
-The system works iteratively, continually refining its understanding of the topic and producing increasingly detailed or expansive insights that feed the final report.
+The flow of the `DeepResearcher` is as follows:
 
-It is worth noting that the deep research agent does not ask clarifying questions at the start, so can be used in an automated fashion. Length and formatting of the final report can also be specified.
+1. Takes a research topic and conducts preliminary research to form a report outline / plan
+2. For each section of the report plan, runs parallel instances of the `IterativeResearcher`, which:
+   1. Identifies knowledge gaps in the current research
+   2. Strategically selects the appropriate tools to fill those gaps
+   3. Executes research actions through specialized agents
+   4. Synthesizes findings into a comprehensive section
+3. Compiles all of the sections into a coherent and well-structured report
+
+It is worth noting that the deep research agent does not ask clarifying questions at the start, so can be used in an automated fashion.
 
 ## Flow Diagram
+
+### IterativeResearcher Flow
 
 ```mermaid
 flowchart LR
@@ -27,11 +40,32 @@ flowchart LR
 
     subgraph "Deep Research Loop"
         B["Knowledge<br>Gap Agent"] -->|"Current gaps<br>& objective"| C["Tool Selector<br>Agent"]
-        C -->|"Tool queries<br>(run parallel)"| D["Tool Agents<br>- Web Search<br>- Crawler<br>- Custom tools"]
+        C -->|"Tool queries<br>(run in parallel)"| D["Tool Agents<br>- Web Search<br>- Crawler<br>- Custom tools"]
         D -->|"Summary of relevant<br>findings & learnings"| B
     end
 
     D --> E["Writer Agent<br>(final output<br>with references)"]
+```
+
+### DeepResearcher Flow
+
+```mermaid
+flowchart LR
+    A["User Input<br>- query<br>- max_iterations<br>- max_time"] --> B["Planner Agent"]
+    
+    B -->|"Report plan<br>(sections & background context)"| D2
+    
+    subgraph Parallel["Parallel Section Research"]
+        D1["IterativeResearcher<br>(Section 1)"]
+        D2["IterativeResearcher<br>(Section 2)"]
+        D3["IterativeResearcher<br>(Section 3)"]
+    end
+    
+    D1 -->|"Section 1<br>Draft"| E["Proofreader<br>Agent"]
+    D2 -->|"Section 2<br>Draft"| E
+    D3 -->|"Section 3<br>Draft"| E
+    
+    E --> F["Final<br>Research<br>Report"]
 ```
 
 ## Architecture
@@ -40,8 +74,9 @@ The Deep Research Assistant is built with the following components:
 
 ### Core Components
 
-- **DeepResearchManager**: Orchestrates the entire research workflow
-- **LLM Client**: Manages interactions with language models
+- **IterativeResearcher**: Orchestrates the iterative research workflow on a single topic or subtopic
+- **DeepResearcher**: Orchestrates a deeper and broader workflow that includes an initial report outline, calling of multiple parallel `IterativeResearch` instances, and final proofreading step
+- **LLM Client**: Manages interactions with language models so that these can be swapped out as needed
 
 ### Agent System
 
@@ -103,29 +138,37 @@ LLMs are configured and managed in the `app/llm_client.py` file
 ### Python Module
 
 ```python
-# See example_usage.py for a full working example
+# See the /examples folder for working examples
 import asyncio
-from app.manager import DeepResearchManager
+from app.manager import IterativeResearcher
 
-manager = DeepResearchManager(max_iterations=5, max_time_minutes=10)
-
-query = "Provide a comprehensive background on quantum computing"
-
+# Run the IterativeResearcher for simple queries
+researcher = IterativeResearcher(max_iterations=5, max_time_minutes=5)
+query = "Provide a comprehensive overview of quantum computing"
 report = asyncio.run(
-    manager.run(query, output_length="5 pages")
+    researcher.run(query, output_length="5 pages")
 )
+
+# Run the DeepResearcher for more lengthy and structured reports
+researcher = DeepResearcher(max_iterations=3, max_time_minutes=5)
+report = asyncio.run(
+    researcher.run(query)
+)
+
+print(report)
 ```
 
 ### Command Line
 
 Run the research assistant from the command line:
 ```sh
-python -m app.main --query "Your research topic" --max-iterations 5 --max-time 30 --output-length "5 pages"
+python -m app.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
 ```
 
 ### Parameters
 
 - `--query`: The research topic or question (if not provided, you'll be prompted)
+- `--mode`: If `deep` uses the DeepResearcher, if `simple` uses the IterativeResearcher (default: deep)
 - `--max-iterations`: Maximum number of research iterations (default: 5)
 - `--max-time`: Maximum time in minutes before the research loop auto-exits to produce a final output (default: 10)
 - `--output-length`: Desired output length for the report (default: "5 pages")
@@ -137,16 +180,17 @@ If OpenAI models are used, the Deep Research assistant integrates with OpenAI's 
 
 ## Observations and Limitations
 
-* **Model Choice:** If using OpenAI models, we find that the `gpt-4o-mini` is as good if not better at tool selection than `o3-mini` (which is consistent with [this leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)). Given the speed and cost benefits we therefore advise using `gpt-4o-mini` for the majority of agents in our workflow.
-* **Output Length:** `gpt-4o` and similar models are not particularly good at following guidelines on output length beyond 1,000 words. We include an `output_length` parameter to give the user control (especially when responses shorter than 1,000 words are desired). Achieving much longer outputs would require us to modify the workflow to have individual agents drafting different sections of the report which are stitched together, and a final proof-reader agent refining the wording.
+- **Model Choice:** 
+  - If using OpenAI models, we find that the `gpt-4o-mini` is as good if not better at tool selection than `o3-mini` (which is consistent with [this leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)). Given the speed and cost benefits we therefore advise using `gpt-4o-mini` as the model for the majority of agents in our workflow.
+  - Some 3rd party agents such as DeepSeek require much clearer instructions about the output instructions even when an output schema is specified. You may run into parser errors when using these models and will need to update the agents' system prompts accordingly.
+- **Output Length:** `gpt-4o` and similar models are not particularly good at following guidelines on output length beyond 1,000 words. We include an `output_length` parameter for the `IterativeResearcher` to give the user control but bear in mind that it will likely ignore instructions for more than 1,000 words or ~5 pages.
 
 ## Ways to Improve Speed and Output
 
-- [ ] Introduce an initial planning agent before the research loop, which produces a task list that is actively maintained and updated during the research loop
 - [ ] Add caching (e.g. Redis) of scraped web pages to avoid duplication
 - [ ] Implement guardrails to nudge the researcher on from sub-topics that are already well covered
-- [ ] Implement tool use tracking to prevent the researcher from calling the same tool across iterations (e.g. crawling the same website)
-- [ ] Add more specialized research tools (academic paper search, data analysis)
+- [ ] Implement tool usage tracking to prevent the researcher from calling the same tool across iterations - usage tracking is already implemented for the `IterativeResearcher`, but not used
+- [ ] Add more specialized research tools (e.g. Wikipedia search, academic paper search, data analysis etc.)
 
 ## Author
 

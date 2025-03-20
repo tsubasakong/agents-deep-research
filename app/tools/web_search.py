@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from ..llm_client import fast_model
 
 load_dotenv()
+CONTENT_LENGTH_LIMIT = 10000  # Trim scraped content to this length to avoid large context / token limit issues
 
 # ------- DEFINE TYPES -------
 
@@ -192,7 +193,7 @@ async def fetch_and_process_url(session: aiohttp.ClientSession, item: WebpageSni
                 text_content = await asyncio.get_event_loop().run_in_executor(
                     None, html_to_text, content
                 )
-                text_content = text_content[:10000]  # Trim content to avoid exceeding token limit
+                text_content = text_content[:CONTENT_LENGTH_LIMIT]  # Trim content to avoid exceeding token limit
                 return ScrapeResult(
                     url=item.url,
                     title=item.title,

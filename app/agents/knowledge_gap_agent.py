@@ -24,7 +24,7 @@ from ..llm_client import fast_model
 
 
 class KnowledgeGapOutput(BaseModel):
-    """Output from the State Evaluator Agent"""
+    """Output from the Knowledge Gap Agent"""
     research_complete: bool = Field(description="Whether the research and findings are complete enough to end the research loop")
     outstanding_gaps: List[str] = Field(description="List of knowledge gaps that still need to be addressed")
 

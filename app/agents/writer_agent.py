@@ -16,11 +16,9 @@ The Agent then:
 1. Creates an outline for the report structure
 2. Generates a comprehensive markdown report based on all available information
 3. Includes proper citations for sources in the format [1], [2], etc.
-4. Returns a ReportData object containing:
-   - short_summary: A concise 2-3 sentence summary
-   - markdown_report: The complete formatted report
+4. Returns a string containing the markdown formatted report
 
-The WriterAgent defined here generates the final structured report in ReportData format.
+The WriterAgent defined here generates the final structured report in markdown format.
 """
 from pydantic import BaseModel
 from agents import Agent
@@ -47,13 +45,8 @@ PROMPT = (
 )
 
 
-class ReportData(BaseModel):
-    markdown: str
-    """The final report"""
-
 writer_agent = Agent(
     name="WriterAgent",
     instructions=PROMPT,
     model=main_model,
-    output_type=ReportData,
 )

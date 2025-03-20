@@ -1,17 +1,16 @@
 from __future__ import annotations
 import asyncio
 import time
-import json
 from typing import Dict, List
 from agents import Runner, custom_span, gen_trace_id, trace
-from .agents.writer_agent import ReportData, writer_agent
+from .agents.writer_agent import writer_agent
 from .agents.knowledge_gap_agent import KnowledgeGapOutput, knowledge_gap_agent
 from .agents.tool_selector_agent import AgentTask, AgentSelectionPlan, tool_selector_agent
 from .agents.tool_agents import TOOL_AGENTS, ToolAgentOutput
 
 
-class DeepResearchManager:
-    """Manager for the deep research workflow that operates in an iterative loop."""
+class IterativeResearcher:
+    """Manager for the iterative research workflow that conducts research on a topic or subtopic by running a continuous research loop."""
 
     def __init__(
         self, 
@@ -33,15 +32,16 @@ class DeepResearchManager:
             self, 
             query: str,
             output_length: str = "",  # A text description of the desired output length, can be left blank
-            output_instructions: str = ""  # Instructions for the final report (e.g. don't include any headings, just a couple of paragraphs of text)
-        ) -> ReportData:
+            output_instructions: str = "",  # Instructions for the final report (e.g. don't include any headings, just a couple of paragraphs of text)
+            background_context: str = ""
+        ) -> str:
         """Run the deep research workflow for a given query."""
         trace_id = gen_trace_id()
         self.start_time = time.time()
         
-        with trace("Deep Research trace", trace_id=trace_id):
+        with trace("IterativeResearcher trace", trace_id=trace_id):
             print(f"View trace: https://platform.openai.com/traces/{trace_id}")
-            self._log_message("Starting deep research workflow...")
+            self._log_message("Starting iterative research workflow...")
             
             # Iterative research loop
             while self.should_continue and self._check_constraints():
@@ -49,13 +49,13 @@ class DeepResearchManager:
                 self._log_message(f"\n=== Starting Iteration {self.iteration} ===")
                 
                 # 1. Evaluate the current state of research
-                evaluation = await self._evaluate_state(query)
+                evaluation = await self._evaluate_state(query, background_context=background_context)
                 
                 # Check if we should continue or break the loop
                 if not evaluation.research_complete:
                     # 2. Select agents to address knowledge gaps
                     next_gap = evaluation.outstanding_gaps[0]
-                    selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query)
+                    selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
                     self.historical_tool_calls.extend([f"[Agent] {task.agent}: [Query] {task.query} / [Entity] {task.entity_website}" for task in selection_plan.tasks])
 
                     # 3. Run the selected agents to gather information
@@ -65,13 +65,13 @@ class DeepResearchManager:
                     # # 4. Update the draft with new information
                 else:
                     self.should_continue = False
-                    self._log_message("Research complete! Final draft is ready.")
+                    self._log_message("IterativeResearcher flagged as having sufficient info to draft a response")
             
             # Create final report
             report = await self._create_final_report(query, length=output_length, instructions=output_instructions)
             
             elapsed_time = time.time() - self.start_time
-            self._log_message(f"Research completed in {int(elapsed_time // 60)} minutes and {int(elapsed_time % 60)} seconds after {self.iteration} iterations.")
+            self._log_message(f"IterativeResearcher completed in {int(elapsed_time // 60)} minutes and {int(elapsed_time % 60)} seconds after {self.iteration} iterations.")
             
             return report
     
@@ -90,7 +90,11 @@ class DeepResearchManager:
         
         return True
     
-    async def _evaluate_state(self, query: str) -> KnowledgeGapOutput:
+    async def _evaluate_state(
+        self, 
+        query: str,
+        background_context: str = ""
+    ) -> KnowledgeGapOutput:
         """Evaluate the current state of research and identify knowledge gaps."""
         self._log_message("Evaluating current research state...")
         
@@ -98,7 +102,7 @@ class DeepResearchManager:
         if not self.historical_thinking:
             historical_thinking_str = "No previous evaluation available."
         else:
-            historical_thinking_str = '\n\n'.join(json.dumps(item.model_dump()) for item in self.historical_thinking)
+            historical_thinking_str = '\n\n'.join(item.model_dump_json() for item in self.historical_thinking)
 
         input_str = f"""
         Current Iteration Number: {self.iteration}
@@ -106,6 +110,8 @@ class DeepResearchManager:
         
         ORIGINAL QUERY:
         {query}
+
+        {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
 
         PREVIOUS ANALYSES:
         {historical_thinking_str}
@@ -128,7 +134,12 @@ class DeepResearchManager:
         
         return evaluation
     
-    async def _select_agents(self, gap: str, query: str) -> AgentSelectionPlan:
+    async def _select_agents(
+        self, 
+        gap: str, 
+        query: str,
+        background_context: str = ""
+    ) -> AgentSelectionPlan:
         """Select agents to address the identified knowledge gap."""
         self._log_message("Selecting appropriate agents for the knowledge gap...")
         
@@ -138,6 +149,8 @@ class DeepResearchManager:
 
         KNOWLEDGE GAP TO ADDRESS:
         {gap}
+
+        {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
         """
         
         result = await Runner.run(
@@ -180,7 +193,7 @@ class DeepResearchManager:
             if agent:
                 result = await Runner.run(
                     agent,
-                    json.dumps(task.model_dump()),
+                    task.model_dump_json(),
                 )
                 # Extract ToolAgentOutput from RunResult
                 output = result.final_output_as(ToolAgentOutput)
@@ -203,9 +216,9 @@ class DeepResearchManager:
             query: str,
             length: str = "",
             instructions: str = ""
-        ) -> ReportData:
-        """Create the final report from the completed draft."""
-        self._log_message("Creating final report...")
+        ) -> str:
+        """Create the final response from the completed draft."""
+        self._log_message("Drafting final response...")
 
         length_str = f"* The full response should be approximately {length}.\n" if length else ""
         instructions_str = f"* {instructions}" if instructions else ""
@@ -225,10 +238,9 @@ class DeepResearchManager:
             input_str,
         )
         
-        report = result.final_output_as(ReportData)
-        self._log_message("Final report created successfully")
+        self._log_message("Final IterativeResearcher response created successfully")
         
-        return report
+        return result.final_output
     
     def _log_message(self, message: str) -> None:
         """Log a message if verbose is True"""

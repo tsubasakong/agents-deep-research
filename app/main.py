@@ -1,14 +1,18 @@
 import asyncio
 import argparse
-from .manager import DeepResearchManager
+from .iterative_research import IterativeResearcher
+from .deep_research import DeepResearcher
+from typing import Literal
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Research Assistant")
+    parser = argparse.ArgumentParser(description="Deep Research Assistant")
     parser.add_argument("--query", type=str, help="Research query")
+    parser.add_argument("--model", type=Literal["deep", "simple"], 
+                        help="Mode of research (deep or simple)", default="deep")
     parser.add_argument("--max-iterations", type=int, default=5,
                        help="Maximum number of iterations for deep research")
     parser.add_argument("--max-time", type=int, default=10,
@@ -28,20 +32,28 @@ async def main() -> None:
     print(f"Starting deep research on: {query}")
     print(f"Max iterations: {args.max_iterations}, Max time: {args.max_time} minutes")
     
-    manager = DeepResearchManager(
-        max_iterations=args.max_iterations,
-        max_time_minutes=args.max_time,
-        verbose=args.verbose
-    )
-    
-    report = await manager.run(
-        query, 
-        output_length=args.output_length, 
-        output_instructions=args.output_instructions
-    )
+    if args.model == "deep":
+        manager = DeepResearcher(
+            query=query,
+            max_iterations=args.max_iterations,
+            max_time_minutes=args.max_time,
+            verbose=args.verbose
+        )
+        report = await manager.run(query)
+    else:
+        manager = IterativeResearcher(
+            max_iterations=args.max_iterations,
+            max_time_minutes=args.max_time,
+            verbose=args.verbose
+            )
+        report = await manager.run(
+            query, 
+            output_length=args.output_length, 
+            output_instructions=args.output_instructions
+        )
 
     print("\n=== Final Report ===")
-    print(report.markdown)
+    print(report)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,5 +1,17 @@
+"""
+Agent used to crawl a website and return the results.
+
+The SearchAgent takes as input a string in the format of AgentTask.model_dump_json(), or can take a simple starting url string as input
+
+The Agent then:
+1. Uses the crawl_website tool to crawl the website
+2. Writes a 3+ paragraph summary of the crawled contents
+3. Includes citations/URLs in brackets next to information sources
+4. Returns the formatted summary as a string
+"""
+
 from agents import Agent
-from ...tools.crawl_website import crawl_website
+from ...tools import crawl_website
 from . import ToolAgentOutput
 from ...llm_client import fast_model
 

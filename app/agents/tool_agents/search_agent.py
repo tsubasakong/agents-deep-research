@@ -1,7 +1,7 @@
 """
 Agent used to perform web searches and summarize the results.
 
-The SearchAgent takes as input a string in the format of AgentTask.model_dump()
+The SearchAgent takes as input a string in the format of AgentTask.model_dump_json(), or can take a simple query string as input
 
 The Agent then:
 1. Uses the web_search tool to retrieve search results
@@ -16,7 +16,7 @@ web search implementation based on environment configuration.
 
 import os
 from agents import Agent, WebSearchTool
-from ...tools.web_search import web_search
+from ...tools import web_search
 from ...llm_client import fast_model
 from dotenv import load_dotenv
 from . import ToolAgentOutput
