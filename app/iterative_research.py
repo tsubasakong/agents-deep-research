@@ -16,7 +16,8 @@ class IterativeResearcher:
         self, 
         max_iterations: int = 5,
         max_time_minutes: int = 10,
-        verbose: bool = True
+        verbose: bool = True,
+        tracing: bool = False
     ):
         self.max_iterations: int = max_iterations
         self.max_time_minutes: int = max_time_minutes
@@ -27,53 +28,60 @@ class IterativeResearcher:
         self.historical_tool_calls: List[str] = []
         self.should_continue: bool = True
         self.verbose: bool = verbose
+        self.tracing: bool = tracing
 
     async def run(
             self, 
             query: str,
             output_length: str = "",  # A text description of the desired output length, can be left blank
             output_instructions: str = "",  # Instructions for the final report (e.g. don't include any headings, just a couple of paragraphs of text)
-            background_context: str = ""
+            background_context: str = "",
         ) -> str:
         """Run the deep research workflow for a given query."""
-        trace_id = gen_trace_id()
         self.start_time = time.time()
-        
-        with trace("IterativeResearcher trace", trace_id=trace_id):
-            print(f"View trace: https://platform.openai.com/traces/{trace_id}")
-            self._log_message("Starting iterative research workflow...")
-            
-            # Iterative research loop
-            while self.should_continue and self._check_constraints():
-                self.iteration += 1
-                self._log_message(f"\n=== Starting Iteration {self.iteration} ===")
-                
-                # 1. Evaluate the current state of research
-                evaluation = await self._evaluate_state(query, background_context=background_context)
-                
-                # Check if we should continue or break the loop
-                if not evaluation.research_complete:
-                    # 2. Select agents to address knowledge gaps
-                    next_gap = evaluation.outstanding_gaps[0]
-                    selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
-                    self.historical_tool_calls.extend([f"[Agent] {task.agent}: [Query] {task.query} / [Entity] {task.entity_website}" for task in selection_plan.tasks])
 
-                    # 3. Run the selected agents to gather information
-                    results: Dict[str, ToolAgentOutput] = await self._execute_tools(selection_plan.tasks)
-                    for tool_output in results.values():
-                        self.historical_findings.append(tool_output.output)
-                    # # 4. Update the draft with new information
-                else:
-                    self.should_continue = False
-                    self._log_message("IterativeResearcher flagged as having sufficient info to draft a response")
+        if self.tracing:
+            trace_id = gen_trace_id()
+            workflow_trace = trace("iterative_researcher", trace_id=trace_id)
+            print(f"View trace: https://platform.openai.com/traces/{trace_id}")
+            workflow_trace.start(mark_as_current=True)
+
+        self._log_message("Starting iterative research workflow...")
+        
+        # Iterative research loop
+        while self.should_continue and self._check_constraints():
+            self.iteration += 1
+            self._log_message(f"\n=== Starting Iteration {self.iteration} ===")
             
-            # Create final report
-            report = await self._create_final_report(query, length=output_length, instructions=output_instructions)
+            # 1. Evaluate the current state of research
+            evaluation = await self._evaluate_state(query, background_context=background_context)
             
-            elapsed_time = time.time() - self.start_time
-            self._log_message(f"IterativeResearcher completed in {int(elapsed_time // 60)} minutes and {int(elapsed_time % 60)} seconds after {self.iteration} iterations.")
-            
-            return report
+            # Check if we should continue or break the loop
+            if not evaluation.research_complete:
+                # 2. Select agents to address knowledge gaps
+                next_gap = evaluation.outstanding_gaps[0]
+                selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
+                self.historical_tool_calls.extend([f"[Agent] {task.agent}: [Query] {task.query} / [Entity] {task.entity_website}" for task in selection_plan.tasks])
+
+                # 3. Run the selected agents to gather information
+                results: Dict[str, ToolAgentOutput] = await self._execute_tools(selection_plan.tasks)
+                for tool_output in results.values():
+                    self.historical_findings.append(tool_output.output)
+                # # 4. Update the draft with new information
+            else:
+                self.should_continue = False
+                self._log_message("IterativeResearcher flagged as having sufficient info to draft a response")
+        
+        # Create final report
+        report = await self._create_final_report(query, length=output_length, instructions=output_instructions)
+        
+        elapsed_time = time.time() - self.start_time
+        self._log_message(f"IterativeResearcher completed in {int(elapsed_time // 60)} minutes and {int(elapsed_time % 60)} seconds after {self.iteration} iterations.")
+        
+        if self.tracing:
+            workflow_trace.finish(reset_current=True)
+
+        return report
     
     def _check_constraints(self) -> bool:
         """Check if we've exceeded our constraints (max iterations or time)."""

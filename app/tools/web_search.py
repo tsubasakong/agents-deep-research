@@ -185,6 +185,15 @@ async def scrape_urls(items: List[WebpageSnippet]) -> List[ScrapeResult]:
 
 async def fetch_and_process_url(session: aiohttp.ClientSession, item: WebpageSnippet) -> ScrapeResult:
     """Helper function to fetch and process a single URL."""
+
+    if not is_valid_url(item.url):
+        return ScrapeResult(
+            url=item.url,
+            title=item.title,
+            description=item.description,
+            text=f"Error fetching content: URL contains restricted file extension"
+        )
+
     try:
         async with session.get(item.url, timeout=15) as response:
             if response.status == 200:
@@ -232,3 +241,42 @@ def html_to_text(html_content: str) -> str:
     extracted_text = "\n".join(element.get_text(strip=True) for element in soup.find_all(tags_to_extract) if element.get_text(strip=True))
 
     return extracted_text
+
+
+def is_valid_url(url: str) -> bool:
+    """Check that a URL does not contain restricted file extensions."""
+    if any(ext in url for ext in [
+        ".pdf", 
+        ".doc", 
+        ".xls",
+        ".ppt",
+        ".zip",
+        ".rar",
+        ".7z",
+        ".txt", 
+        ".js", 
+        ".xml", 
+        ".css", 
+        ".png", 
+        ".jpg", 
+        ".jpeg", 
+        ".gif", 
+        ".ico", 
+        ".svg", 
+        ".webp", 
+        ".mp3", 
+        ".mp4", 
+        ".avi", 
+        ".mov", 
+        ".wmv", 
+        ".flv", 
+        ".wma", 
+        ".wav", 
+        ".m4a", 
+        ".m4v", 
+        ".m4b", 
+        ".m4p", 
+        ".m4u"
+    ]):
+        return False
+    return True

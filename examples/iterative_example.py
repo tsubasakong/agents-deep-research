@@ -10,7 +10,8 @@ from app.iterative_research import IterativeResearcher
 manager = IterativeResearcher(
     max_iterations=5,
     max_time_minutes=10,
-    verbose=True
+    verbose=True,
+    tracing=True
 )
 
 query = "Write a report on Plato - who was he, what were his main works " \

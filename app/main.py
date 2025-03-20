@@ -23,6 +23,8 @@ async def main() -> None:
                        help="Additional instructions for the report")
     parser.add_argument("--verbose", action="store_true",
                        help="Print status updates to the console")
+    parser.add_argument("--tracing", action="store_true",
+                       help="Enable tracing for the research (only valid for OpenAI models)")
     
     args = parser.parse_args()
     
@@ -37,15 +39,17 @@ async def main() -> None:
             query=query,
             max_iterations=args.max_iterations,
             max_time_minutes=args.max_time,
-            verbose=args.verbose
+            verbose=args.verbose,
+            tracing=args.tracing
         )
         report = await manager.run(query)
     else:
         manager = IterativeResearcher(
             max_iterations=args.max_iterations,
             max_time_minutes=args.max_time,
-            verbose=args.verbose
-            )
+            verbose=args.verbose,
+            tracing=args.tracing
+        )
         report = await manager.run(
             query, 
             output_length=args.output_length, 

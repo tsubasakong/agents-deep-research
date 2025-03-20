@@ -165,7 +165,7 @@ Run the research assistant from the command line:
 python -m app.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
 ```
 
-### Parameters
+#### Parameters
 
 - `--query`: The research topic or question (if not provided, you'll be prompted)
 - `--mode`: If `deep` uses the DeepResearcher, if `simple` uses the IterativeResearcher (default: deep)
@@ -173,6 +173,11 @@ python -m app.main --mode deep --query "Provide a comprehensive overview of quan
 - `--max-time`: Maximum time in minutes before the research loop auto-exits to produce a final output (default: 10)
 - `--output-length`: Desired output length for the report (default: "5 pages")
 - `--output-instructions`: Additional formatting instructions for the final report
+
+#### Boolean Flags
+
+- `--verbose`: Prints the research progress to console
+- `--trace`: Traces the workflow on the OpenAI platform (only works for OpenAI models)
 
 ## Trace Monitoring
 

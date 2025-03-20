@@ -10,7 +10,8 @@ from app.deep_research import DeepResearcher
 manager = DeepResearcher(
     max_iterations=3,
     max_time_minutes=10,
-    verbose=True
+    verbose=True,
+    tracing=True
 )
 
 query = "Write a report on Plato - who was he, what were his main works " \
