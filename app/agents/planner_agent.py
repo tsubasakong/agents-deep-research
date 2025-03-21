@@ -18,7 +18,7 @@ from agents import Agent
 from ..llm_client import main_model
 from .tool_agents.crawl_agent import crawl_agent
 from .tool_agents.search_agent import search_agent
-
+from datetime import datetime
 
 class ReportPlanSection(BaseModel):
     """A section of the report that needs to be written"""
@@ -32,8 +32,8 @@ class ReportPlan(BaseModel):
     report_outline: List[ReportPlanSection] = Field(description="List of sections that need to be written in the report")
 
 
-INSTRUCTIONS = """
-You are a research manager, managing a team of research agents. 
+INSTRUCTIONS = f"""
+You are a research manager, managing a team of research agents. Today's date is {datetime.now().strftime("%Y-%m-%d")}.
 Given a research query, your job is to produce an initial outline of the report (section titles and key questions),
 as well as some background context. Each section will be assigned to a different researcher in your team who will then
 carry out research on the section.

@@ -42,6 +42,9 @@ if MAIN_MODEL_PROVIDER not in supported_providers:
 if FAST_MODEL_PROVIDER not in supported_providers:
     raise ValueError(f"Invalid model provider: {FAST_MODEL_PROVIDER}")
 
+if OPENAI_API_KEY:
+    from agents import set_tracing_export_api_key
+    set_tracing_export_api_key(OPENAI_API_KEY)
 
 # ------- SET UP REASONING MODEL -------
 

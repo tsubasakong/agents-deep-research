@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from typing import List
 from agents import Agent
 from ..llm_client import reasoning_model
+from datetime import datetime
 
 
 class ReportDraftSection(BaseModel):
@@ -31,8 +32,10 @@ class ReportDraft(BaseModel):
     sections: List[ReportDraftSection] = Field(description="List of sections that are in the report")
 
 
-INSTRUCTIONS = """
+INSTRUCTIONS = f"""
 You are a research expert who proofreads and edits research reports.
+Today's date is {datetime.now().strftime("%Y-%m-%d")}.
+
 You are given:
 1. The original query topic for the report
 2. A first draft of the report in ReportDraft format containing each section in sequence

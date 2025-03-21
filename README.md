@@ -166,7 +166,7 @@ Run the research assistant from the command line:
 python -m app.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
 ```
 
-#### Parameters
+Parameters:
 
 - `--query`: The research topic or question (if not provided, you'll be prompted)
 - `--mode`: If `deep` uses the DeepResearcher, if `simple` uses the IterativeResearcher (default: deep)
@@ -175,7 +175,7 @@ python -m app.main --mode deep --query "Provide a comprehensive overview of quan
 - `--output-length`: Desired output length for the report (default: "5 pages")
 - `--output-instructions`: Additional formatting instructions for the final report
 
-#### Boolean Flags
+Boolean Flags:
 
 - `--verbose`: Prints the research progress to console
 - `--tracing`: Traces the workflow on the OpenAI platform (only works for OpenAI models)
@@ -186,10 +186,19 @@ If OpenAI models are used, the Deep Research assistant integrates with OpenAI's 
 
 ## Observations and Limitations
 
-- **Model Choice:** 
-  - If using OpenAI models, we find that the `gpt-4o-mini` is as good if not better at tool selection than `o3-mini` (which is consistent with [this leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)). Given the speed and cost benefits we therefore advise using `gpt-4o-mini` as the model for the majority of agents in our workflow.
-  - Some 3rd party agents such as DeepSeek require much clearer instructions about the output instructions even when an output schema is specified. You may run into parser errors when using these models and will need to update the agents' system prompts accordingly.
-- **Output Length:** `gpt-4o` and similar models are not particularly good at following guidelines on output length beyond 1,000 words. We include an `output_length` parameter for the `IterativeResearcher` to give the user control but bear in mind that it will likely ignore instructions for more than 1,000 words or ~5 pages.
+### **Model Choice:** 
+
+- If using OpenAI models, we find that the `gpt-4o-mini` is as good if not better at tool selection than `o3-mini` (which is consistent with [this leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)). Given the speed and cost benefits we therefore advise using `gpt-4o-mini` as the model for the majority of agents in our workflow, with `o3-mini` for planning tasks and `gpt-4o` for final writing.
+- Some 3rd party agents such as DeepSeek require much clearer instructions about the output instructions even when an output schema is specified. You may run into parser errors when using these models and will need to update the agents' system prompts accordingly.
+
+### **Output Length:** 
+
+LLMs are not good at following guidelines on output length. You typically run into two issues:
+
+- LLMs are bad at counting. When giving length instructions, it's better to provide a reference that the model will be familiar with from its training data (e.g. 'length of a tweet', 'a few paragraphs', 'length of a book') rather than a specific word count. 
+- Even though the output token limit on many of these models is massive, it is very difficult to get them to produce more than 1-2,000 words per response. There are methods such as [this one](https://medium.com/@techsachin/longwriter-using-llm-agent-based-pipeline-to-scale-llms-output-window-size-to-10-000-words-33210d299e2b) to produce longer outputs.
+
+We include an `output_length` parameter for the `IterativeResearcher` to give the user control but bear in mind the above limitations.
 
 ## Ways to Improve Speed and Output
 

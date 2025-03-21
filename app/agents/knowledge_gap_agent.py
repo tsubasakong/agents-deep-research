@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 from typing import List
 from agents import Agent
 from ..llm_client import fast_model
-
+from datetime import datetime
 
 class KnowledgeGapOutput(BaseModel):
     """Output from the Knowledge Gap Agent"""
@@ -29,8 +29,9 @@ class KnowledgeGapOutput(BaseModel):
     outstanding_gaps: List[str] = Field(description="List of knowledge gaps that still need to be addressed")
 
 
-INSTRUCTIONS = """
-You are a Research State Evaluator. Your job is to critically analyze the current state of a research report, 
+INSTRUCTIONS = f"""
+You are a Research State Evaluator. Today's date is {datetime.now().strftime("%Y-%m-%d")}.
+Your job is to critically analyze the current state of a research report, 
 identify what knowledge gaps still exist and determine the best next step to take.
 
 You will be given:

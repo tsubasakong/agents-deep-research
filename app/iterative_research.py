@@ -6,7 +6,7 @@ from agents import Runner, custom_span, gen_trace_id, trace
 from .agents.writer_agent import writer_agent
 from .agents.knowledge_gap_agent import KnowledgeGapOutput, knowledge_gap_agent
 from .agents.tool_selector_agent import AgentTask, AgentSelectionPlan, tool_selector_agent
-from .agents.observations_agent import observations_agent
+from .agents.thinking_agent import thinking_agent
 from .agents.tool_agents import TOOL_AGENTS, ToolAgentOutput
 from pydantic import BaseModel, Field
 
@@ -337,7 +337,7 @@ class IterativeResearcher:
         {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}
         """
         result = await Runner.run(
-            observations_agent,
+            thinking_agent,
             input_str,
         )
 
