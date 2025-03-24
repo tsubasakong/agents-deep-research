@@ -131,6 +131,10 @@ class IterativeResearcher:
         self.should_continue: bool = True
         self.verbose: bool = verbose
         self.tracing: bool = tracing
+        
+        if not self.tracing:
+            from agents import set_tracing_disabled
+            set_tracing_disabled(True)
 
     async def run(
             self, 

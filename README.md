@@ -69,15 +69,13 @@ flowchart LR
 
 ## Installation
 
-### Using Pip
-
 Install using `pip`:
 
 ```
-pip install deep_research
+pip install deep-researcher
 ```
 
-Or clone the Github repo:
+Or clone the GitHub repo:
 
 ```sh
 git clone https://github.com/qx-labs/agents-deep-research.git
@@ -130,10 +128,10 @@ Run the research assistant from the command line.
 
 If you've installed via `pip`:
 ```sh
-deep-research --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
+deep-researcher --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
 ```
 
-Or if you've cloned the Github repo:
+Or if you've cloned the GitHub repo:
 
 ```sh
 python -m deep_research.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10

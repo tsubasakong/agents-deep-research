@@ -1,7 +1,6 @@
-import os
 from setuptools import setup, find_packages
 
-LATEST_VERSION = "0.1.0"
+LATEST_VERSION = "0.0.1"
 
 exclude_packages = []
 
@@ -12,7 +11,7 @@ with open("requirements.txt", "r") as f:
     reqs = [line.strip() for line in f if not any(pkg in line for pkg in exclude_packages)]
 
 setup(
-    name="deep-research",
+    name="deep-researcher",
     version=LATEST_VERSION,
     author="Jai Juneja",
     author_email="jai@qxlabs.com",

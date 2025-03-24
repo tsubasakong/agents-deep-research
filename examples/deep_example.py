@@ -5,7 +5,7 @@ See deep_output.txt for the console output from running this script, and deep_ou
 """
 
 import asyncio
-from deep_research import DeepResearcher
+from deep_researcher import DeepResearcher
 
 manager = DeepResearcher(
     max_iterations=3,

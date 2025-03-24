@@ -5,7 +5,7 @@ See iterative_output.txt for the console output from running this script, and it
 """
 
 import asyncio
-from deep_research import IterativeResearcher
+from deep_researcher import IterativeResearcher
 
 manager = IterativeResearcher(
     max_iterations=5,

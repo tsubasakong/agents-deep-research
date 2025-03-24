@@ -23,6 +23,10 @@ class DeepResearcher:
         self.verbose = verbose
         self.tracing = tracing
 
+        if not self.tracing:
+            from agents import set_tracing_disabled
+            set_tracing_disabled(True)
+
     async def run(self, query: str) -> str:
         """Run the deep research workflow"""
         start_time = time.time()

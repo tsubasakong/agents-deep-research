@@ -1,5 +1,5 @@
 import asyncio
-from deep_research.agents.planner_agent import planner_agent, ReportPlan
+from deep_researcher.agents.planner_agent import planner_agent, ReportPlan
 from agents import Runner, gen_trace_id, trace
 
 
