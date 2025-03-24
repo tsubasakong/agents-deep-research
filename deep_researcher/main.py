@@ -36,7 +36,6 @@ async def main() -> None:
     
     if args.model == "deep":
         manager = DeepResearcher(
-            query=query,
             max_iterations=args.max_iterations,
             max_time_minutes=args.max_time,
             verbose=args.verbose,
