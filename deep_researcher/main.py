@@ -11,7 +11,7 @@ load_dotenv(override=True)
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Deep Research Assistant")
     parser.add_argument("--query", type=str, help="Research query")
-    parser.add_argument("--model", type=Literal["deep", "simple"], 
+    parser.add_argument("--model", type=str, choices=["deep", "simple"], 
                         help="Mode of research (deep or simple)", default="deep")
     parser.add_argument("--max-iterations", type=int, default=5,
                        help="Maximum number of iterations for deep research")
