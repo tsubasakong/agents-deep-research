@@ -34,7 +34,7 @@ setup(
     install_requires=reqs,
     entry_points={
         'console_scripts': [
-            'deep-research=deep_research.main:cli_entry',
+            'deep-researcher=deep_researcher.main:cli_entry',
         ],
     },
 ) 
