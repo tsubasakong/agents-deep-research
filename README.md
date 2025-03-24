@@ -1,12 +1,10 @@
 # Agentic Deep Research using the OpenAI Agents SDK
 
-An implementation of deep research built using the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), designed to perform in-depth research on any given topic.
+A powerful deep research assistant built using the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), designed to perform in-depth research on any given topic.
 
-It employs a multi-agent architecture that works iteratively, continually refining its understanding of the topic and producing increasingly detailed and expansive insights that feed the final report.
+It uses a multi-agent architecture that works iteratively, continually refining its understanding of a topic and producing increasingly detailed insights that feed the final report.
 
-This is written entirely in Python. It can be run as a module or via the command line. 
-
-Designed to be extedible to use custom tools and 3rd party LLMs compatible with the OpenAI API spec.
+Designed to be extedible to use custom tools and 3rd party LLMs compatible with the OpenAI API spec. When using OpenAI models, all LLM and tool calls are fully traced.
 
 ## Overview
 
@@ -69,6 +67,92 @@ flowchart LR
     E --> F["Final<br>Research<br>Report"]
 ```
 
+## Installation
+
+### Using Pip
+
+Install using `pip`:
+
+```
+pip install deep_research
+```
+
+Or clone the Github repo:
+
+```sh
+git clone https://github.com/qx-labs/agents-deep-research.git
+cd agents-deep-research
+pip install -r requirements.txt
+```
+
+Then create a `.env` file with your API keys:
+
+```sh
+cp .env.example .env
+```
+
+Edit the `.env` file to add your OpenAI, Serper and other settings as needed, e.g.:
+
+```sh
+OPENAI_API_KEY=<your_key>
+SEARCH_PROVIDER=serper  # or set to openai
+SERPER_API_KEY=<your_key>
+```
+
+## Usage
+
+### Python Module
+
+```python
+# See the /examples folder for working examples
+import asyncio
+from deep_research import IterativeResearcher, DeepResearcher
+
+# Run the IterativeResearcher for simple queries
+researcher = IterativeResearcher(max_iterations=5, max_time_minutes=5)
+query = "Provide a comprehensive overview of quantum computing"
+report = asyncio.run(
+    researcher.run(query, output_length="5 pages")
+)
+
+# Run the DeepResearcher for more lengthy and structured reports
+researcher = DeepResearcher(max_iterations=3, max_time_minutes=5)
+report = asyncio.run(
+    researcher.run(query)
+)
+
+print(report)
+```
+
+### Command Line
+
+Run the research assistant from the command line.
+
+If you've installed via `pip`:
+```sh
+deep-research --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
+```
+
+Or if you've cloned the Github repo:
+
+```sh
+python -m deep_research.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
+```
+
+Parameters:
+
+- `--query`: The research topic or question (if not provided, you'll be prompted)
+- `--mode`: If `deep` uses the DeepResearcher, if `simple` uses the IterativeResearcher (default: deep)
+- `--max-iterations`: Maximum number of research iterations (default: 5)
+- `--max-time`: Maximum time in minutes before the research loop auto-exits to produce a final output (default: 10)
+- `--output-length`: Desired output length for the report (default: "5 pages")
+- `--output-instructions`: Additional formatting instructions for the final report
+
+Boolean Flags:
+
+- `--verbose`: Prints the research progress to console
+- `--tracing`: Traces the workflow on the OpenAI platform (only works for OpenAI models)
+
 ## Architecture
 
 The Deep Research Assistant is built with the following components:
@@ -92,7 +176,7 @@ The Deep Research Assistant is built with the following components:
 
 - **Web Search**: Finds relevant information from SERP queries
   - Our implementation uses [Serper](https://www.serper.dev) to run Google searches by default, which requires an API key set to the `SERPER_API_KEY` env variable.
-  - You can replace this with the native web search tool from OpenAI by setting the environment variable `USE_OPENAI_WEBSEARCH` to `true`
+  - You can replace this with the native web search tool from OpenAI by setting the environment variable `SEARCH_PROVIDER` to `openai`
 - **Website Crawler**: Extracts detailed content from the pages of a given website
 
 ### Implementing Custom Tool Agents
@@ -108,77 +192,6 @@ Tool agents are agents specialized in carrying out specific tasks using one or m
 This repository is in theory compatible with any LLMs that follow the OpenAI API specs. This includes the likes of DeepSeek as well as models served through OpenRouter. However, the models need to be compatible with [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs) in the OpenAI API spec (i.e. being able to set `response_format: {type: "json_schema", ...}`).
 
 LLMs are configured and managed in the `app/llm_client.py` file 
-
-## Installation
-
-1. Clone this repository:
-   ```sh
-   git clone https://github.com/qx-labs/agents-deep-research.git
-   cd agents-sd-deep-research
-   ```
-
-2. Create and activate a virtual environment:
-   ```sh
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-4. Create a `.env` file with your API keys:
-   ```sh
-   cp .env.example .env
-   ```
-   Then edit the `.env` file to add your OpenAI API key (or other API keys as needed).
-
-## Usage
-
-### Python Module
-
-```python
-# See the /examples folder for working examples
-import asyncio
-from app.manager import IterativeResearcher
-
-# Run the IterativeResearcher for simple queries
-researcher = IterativeResearcher(max_iterations=5, max_time_minutes=5)
-query = "Provide a comprehensive overview of quantum computing"
-report = asyncio.run(
-    researcher.run(query, output_length="5 pages")
-)
-
-# Run the DeepResearcher for more lengthy and structured reports
-researcher = DeepResearcher(max_iterations=3, max_time_minutes=5)
-report = asyncio.run(
-    researcher.run(query)
-)
-
-print(report)
-```
-
-### Command Line
-
-Run the research assistant from the command line:
-```sh
-python -m app.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
-```
-
-Parameters:
-
-- `--query`: The research topic or question (if not provided, you'll be prompted)
-- `--mode`: If `deep` uses the DeepResearcher, if `simple` uses the IterativeResearcher (default: deep)
-- `--max-iterations`: Maximum number of research iterations (default: 5)
-- `--max-time`: Maximum time in minutes before the research loop auto-exits to produce a final output (default: 10)
-- `--output-length`: Desired output length for the report (default: "5 pages")
-- `--output-instructions`: Additional formatting instructions for the final report
-
-Boolean Flags:
-
-- `--verbose`: Prints the research progress to console
-- `--tracing`: Traces the workflow on the OpenAI platform (only works for OpenAI models)
 
 ## Trace Monitoring
 
@@ -200,10 +213,13 @@ LLMs are not good at following guidelines on output length. You typically run in
 
 We include an `output_length` parameter for the `IterativeResearcher` to give the user control but bear in mind the above limitations.
 
-## Ways to Improve Speed and Output
+## TODOs:
 
-- [ ] Add caching (e.g. Redis) of scraped web pages to avoid duplication
-- [ ] Add more specialized research tools (e.g. Wikipedia search, academic paper search, data analysis etc.)
+- [ ] Add compatibility with other search providers (e.g. Bing, Tavily, DuckDuckGo etc.)
+- [ ] Add caching (e.g. Redis) of scraped web pages to avoid duplicate work/calls
+- [ ] Add more specialized research tools (e.g. Wikipedia, arXiv, data analysis etc.)
+- [ ] Add PDF parser
+- [ ] Add integration / RAG for local files
 
 ## Author
 

@@ -59,5 +59,10 @@ async def main() -> None:
     print("\n=== Final Report ===")
     print(report)
 
-if __name__ == "__main__":
+# Command line entry point
+def cli_entry():
+    """Entry point for the command-line interface."""
     asyncio.run(main())
+
+if __name__ == "__main__":
+    cli_entry()

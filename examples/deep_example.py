@@ -5,7 +5,7 @@ See deep_output.txt for the console output from running this script, and deep_ou
 """
 
 import asyncio
-from app.deep_research import DeepResearcher
+from deep_research import DeepResearcher
 
 manager = DeepResearcher(
     max_iterations=3,
@@ -14,8 +14,7 @@ manager = DeepResearcher(
     tracing=True
 )
 
-query = "Write a report on Plato - who was he, what were his main works " \
-        "and what are the main philosophical ideas he's known for"
+query = "Write a comprehensive report on the company Buena (buena.com) from an investor's perspective, including the company's history, products, financials, market (size, growth and trends) and competitors."
 
 report = asyncio.run(
     manager.run(

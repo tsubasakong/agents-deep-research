@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 from . import ToolAgentOutput
 
 load_dotenv()
-USE_OPENAI_WEBSEARCH = os.getenv("USE_OPENAI_WEBSEARCH", "").lower() == "true"
+SEARCH_PROVIDER = os.getenv("SEARCH_PROVIDER", "serper").lower()
 
 INSTRUCTIONS = """You are a research assistant. Given an AgentTask, follow these steps:
 
@@ -37,7 +37,7 @@ INSTRUCTIONS = """You are a research assistant. Given an AgentTask, follow these
 * Do not make additional searches
 """
 
-if USE_OPENAI_WEBSEARCH:
+if SEARCH_PROVIDER == "openai":
     web_search_tool = WebSearchTool()
 else:
     web_search_tool = web_search
