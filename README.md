@@ -4,7 +4,7 @@ A powerful deep research assistant built using the [OpenAI Agents SDK](https://g
 
 It uses a multi-agent architecture that works iteratively, continually refining its understanding of a topic and producing increasingly detailed insights that feed the final report.
 
-Designed to be extedible to use custom tools and 3rd party LLMs compatible with the OpenAI API spec. When using OpenAI models, all LLM and tool calls are fully traced.
+Designed to be extendable to use custom tools and 3rd party LLMs compatible with the OpenAI API spec. When using OpenAI models, all LLM and tool calls are fully traced. 
 
 ## Overview
 

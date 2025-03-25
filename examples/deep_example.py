@@ -14,7 +14,8 @@ manager = DeepResearcher(
     tracing=True
 )
 
-query = "Write a comprehensive report on the company Buena (buena.com) from an investor's perspective, including the company's history, products, financials, market (size, growth and trends) and competitors."
+query = "Write a report on Plato - who was he, what were his main works " \
+        "and what are the main philosophical ideas he's known for"
 
 report = asyncio.run(
     manager.run(

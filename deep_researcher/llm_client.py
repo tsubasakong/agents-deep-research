@@ -8,15 +8,20 @@ load_dotenv(override=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
-DEFAULT_REASONING_PROVIDER=os.getenv("DEFAULT_REASONING_PROVIDER", "openai")
-DEFAULT_REASONING_MODEL=os.getenv("DEFAULT_REASONING_MODEL", "o3-mini")
+REASONING_MODEL_PROVIDER=os.getenv("REASONING_MODEL_PROVIDER", "openai")
+REASONING_MODEL=os.getenv("REASONING_MODEL", "o3-mini")
 MAIN_MODEL_PROVIDER=os.getenv("MAIN_MODEL_PROVIDER", "openai")
 MAIN_MODEL=os.getenv("MAIN_MODEL", "gpt-4o")
 FAST_MODEL_PROVIDER=os.getenv("FAST_MODEL_PROVIDER", "openai")
 FAST_MODEL=os.getenv("FAST_MODEL", "gpt-4o-mini")
 
-supported_providers = ["openai", "deepseek", "openrouter"]
+supported_providers = ["openai", "deepseek", "openrouter", "gemini", "anthropic", "perplexity", "huggingface"]
+
 provider_mapping = {
     "openai": {
         "model": OpenAIResponsesModel,
@@ -33,10 +38,30 @@ provider_mapping = {
         "base_url": "https://openrouter.ai/api/v1",
         "api_key": OPENROUTER_API_KEY,
     },
+    "gemini": {
+        "model": OpenAIChatCompletionsModel,
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "api_key": GEMINI_API_KEY,
+    },
+    "anthropic": {
+        "model": OpenAIChatCompletionsModel,
+        "base_url": "https://api.anthropic.com/v1/",
+        "api_key": ANTHROPIC_API_KEY,
+    },
+    "perplexity": {
+        "model": OpenAIChatCompletionsModel,
+        "base_url": "https://api.perplexity.ai/chat/completions",
+        "api_key": PERPLEXITY_API_KEY,
+    },
+    "huggingface": {
+        "model": OpenAIChatCompletionsModel,
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "api_key": HUGGINGFACE_API_KEY,
+    }
 }
 
-if DEFAULT_REASONING_PROVIDER not in supported_providers:
-    raise ValueError(f"Invalid model provider: {DEFAULT_REASONING_PROVIDER}")
+if REASONING_MODEL_PROVIDER not in supported_providers:
+    raise ValueError(f"Invalid model provider: {REASONING_MODEL_PROVIDER}")
 if MAIN_MODEL_PROVIDER not in supported_providers:
     raise ValueError(f"Invalid model provider: {MAIN_MODEL_PROVIDER}")
 if FAST_MODEL_PROVIDER not in supported_providers:
@@ -49,12 +74,12 @@ if OPENAI_API_KEY:
 # ------- SET UP REASONING MODEL -------
 
 reasoning_client = AsyncOpenAI(
-    api_key=provider_mapping[DEFAULT_REASONING_PROVIDER]["api_key"],
-    base_url=provider_mapping[DEFAULT_REASONING_PROVIDER]["base_url"],
+    api_key=provider_mapping[REASONING_MODEL_PROVIDER]["api_key"],
+    base_url=provider_mapping[REASONING_MODEL_PROVIDER]["base_url"],
 )
 
-reasoning_model = provider_mapping[DEFAULT_REASONING_PROVIDER]["model"](
-    model=DEFAULT_REASONING_MODEL,
+reasoning_model = provider_mapping[REASONING_MODEL_PROVIDER]["model"](
+    model=REASONING_MODEL,
     openai_client=reasoning_client
 )
 
