@@ -1,6 +1,6 @@
 import os
 from openai import AsyncOpenAI
-from agents import OpenAIChatCompletionsModel, OpenAIResponsesModel
+from agents import OpenAIChatCompletionsModel, OpenAIResponsesModel, set_tracing_export_api_key, set_tracing_disabled
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -12,6 +12,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+LOCAL_MODEL_URL = os.getenv("LOCAL_MODEL_URL")  # e.g. "http://localhost:11434/v1"
 
 REASONING_MODEL_PROVIDER=os.getenv("REASONING_MODEL_PROVIDER", "openai")
 REASONING_MODEL=os.getenv("REASONING_MODEL", "o3-mini")
@@ -20,7 +21,7 @@ MAIN_MODEL=os.getenv("MAIN_MODEL", "gpt-4o")
 FAST_MODEL_PROVIDER=os.getenv("FAST_MODEL_PROVIDER", "openai")
 FAST_MODEL=os.getenv("FAST_MODEL", "gpt-4o-mini")
 
-supported_providers = ["openai", "deepseek", "openrouter", "gemini", "anthropic", "perplexity", "huggingface"]
+supported_providers = ["openai", "deepseek", "openrouter", "gemini", "anthropic", "perplexity", "huggingface", "local"]
 
 provider_mapping = {
     "openai": {
@@ -57,6 +58,11 @@ provider_mapping = {
         "model": OpenAIChatCompletionsModel,
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
         "api_key": HUGGINGFACE_API_KEY,
+    },
+    "local": {
+        "model": OpenAIChatCompletionsModel,
+        "base_url": LOCAL_MODEL_URL,
+        "api_key": "ollama",  # Required by OpenAI client but not used
     }
 }
 
@@ -68,8 +74,10 @@ if FAST_MODEL_PROVIDER not in supported_providers:
     raise ValueError(f"Invalid model provider: {FAST_MODEL_PROVIDER}")
 
 if OPENAI_API_KEY:
-    from agents import set_tracing_export_api_key
     set_tracing_export_api_key(OPENAI_API_KEY)
+else:
+    # If no OpenAI API key is provided, disable tracing
+    set_tracing_disabled(True)
 
 # ------- SET UP REASONING MODEL -------
 

@@ -1,3 +1,9 @@
+<div align="center">
+
+[![PyPI version](https://badge.fury.io/py/deep-researcher.svg)](https://badge.fury.io/py/deep-researcher)
+
+</div>
+
 # Agentic Deep Research using the OpenAI Agents SDK
 
 A powerful deep research assistant built using the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), designed to perform in-depth research on any given topic.
