@@ -80,14 +80,18 @@ class Conversation(BaseModel):
     def get_action_string(self, iteration_num: int) -> str:
         """Get the action for the current iteration."""
         if self.history[iteration_num].tool_calls:
-            return f"<action>\nCalling the following tools to address the knowledge gap:\n" \
-                f"{'\n'.join(self.history[iteration_num].tool_calls)}\n</action>"
+            joined_calls = '\n'.join(self.history[iteration_num].tool_calls)
+            return (
+                "<action>\nCalling the following tools to address the knowledge gap:\n"
+                f"{joined_calls}\n</action>"
+            )
         return ""
         
     def get_findings_string(self, iteration_num: int) -> str:
         """Get the findings for the current iteration."""
         if self.history[iteration_num].findings:
-            return f"<findings>\n{'\n\n'.join(self.history[iteration_num].findings)}\n</findings>"
+            joined_findings = '\n\n'.join(self.history[iteration_num].findings)
+            return f"<findings>\n{joined_findings}\n</findings>"
         return ""
     
     def get_thought_string(self, iteration_num: int) -> str:
@@ -214,14 +218,16 @@ class IterativeResearcher:
     ) -> KnowledgeGapOutput:
         """Evaluate the current state of research and identify knowledge gaps."""
 
+        background = f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""
+
         input_str = f"""
         Current Iteration Number: {self.iteration}
         Time Elapsed: {(time.time() - self.start_time) / 60:.2f} minutes of maximum {self.max_time_minutes} minutes
-        
+
         ORIGINAL QUERY:
         {query}
 
-        {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
+        {background}
 
         HISTORY OF ACTIONS, FINDINGS AND THOUGHTS:
         {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}        
@@ -249,6 +255,8 @@ class IterativeResearcher:
     ) -> AgentSelectionPlan:
         """Select agents to address the identified knowledge gap."""
         
+        background = f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""
+
         input_str = f"""
         ORIGINAL QUERY:
         {query}
@@ -256,7 +264,7 @@ class IterativeResearcher:
         KNOWLEDGE GAP TO ADDRESS:
         {gap}
 
-        {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
+        {background}
 
         HISTORY OF ACTIONS, FINDINGS AND THOUGHTS:
         {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}
@@ -331,11 +339,13 @@ class IterativeResearcher:
     async def _generate_observations(self, query: str, background_context: str = "") -> str:
         """Generate observations from the current state of the research."""
                 
+        background = f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""
+
         input_str = f"""
         ORIGINAL QUERY:
         {query}
 
-        {f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""}
+        {background}
 
         HISTORY OF ACTIONS, FINDINGS AND THOUGHTS:
         {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}
@@ -352,10 +362,10 @@ class IterativeResearcher:
         return observations
 
     async def _create_final_report(
-            self, 
-            query: str,
-            length: str = "",
-            instructions: str = ""
+        self, 
+        query: str,
+        length: str = "",
+        instructions: str = ""
         ) -> str:
         """Create the final response from the completed draft."""
         self._log_message("=== Drafting Final Response ===")
@@ -364,13 +374,15 @@ class IterativeResearcher:
         instructions_str = f"* {instructions}" if instructions else ""
         guidelines_str = ("\n\nGUIDELINES:\n" + length_str + instructions_str).strip('\n') if length or instructions else ""
 
+        all_findings = '\n\n'.join(self.conversation.get_all_findings()) or "No findings available yet."
+
         input_str = f"""
         Provide a response based on the query and findings below with as much detail as possible. {guidelines_str}
 
         QUERY: {query}
 
         FINDINGS:
-        {'\n\n'.join(self.conversation.get_all_findings()) or "No findings available yet."}
+        {all_findings}
         """
 
         result = await Runner.run(
