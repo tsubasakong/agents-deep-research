@@ -5,6 +5,10 @@ See deep_output.txt for the console output from running this script, and deep_ou
 """
 
 import asyncio
+import os
+import sys
+from dotenv import load_dotenv
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from deep_researcher import DeepResearcher
 
 manager = DeepResearcher(
