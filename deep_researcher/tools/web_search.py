@@ -33,6 +33,10 @@ class SearchResults(BaseModel):
 
 # ------- DEFINE TOOL -------
 
+# Add a module-level variable to store the singleton instance
+_serper_client = None
+
+
 @function_tool
 async def web_search(query: str) -> Union[List[ScrapeResult], str]:
     """Perform a web search for a given query and get back the URLs along with their titles, descriptions and text contents.
@@ -55,8 +59,11 @@ async def web_search(query: str) -> Union[List[ScrapeResult], str]:
     else:
         try:
             # Lazy initialization of SerperClient
-            serper_client = SerperClient()
-            search_results = await serper_client.search(query, filter_for_relevance=True, max_results=5)
+            global _serper_client
+            if _serper_client is None:
+                _serper_client = SerperClient()
+
+            search_results = await _serper_client.search(query, filter_for_relevance=True, max_results=5)
             results = await scrape_urls(search_results)
             return results
         except Exception as e:
