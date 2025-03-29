@@ -12,6 +12,7 @@ from ..llm_client import fast_model
 
 load_dotenv()
 CONTENT_LENGTH_LIMIT = 10000  # Trim scraped content to this length to avoid large context / token limit issues
+SEARCH_PROVIDER = os.getenv("SEARCH_PROVIDER", "serper").lower()
 
 # ------- DEFINE TYPES -------
 
@@ -46,13 +47,21 @@ async def web_search(query: str) -> Union[List[ScrapeResult], str]:
             - description: The description of the search result
             - text: The full text content of the search result
     """
-    try:
-        search_results = await serper_client.search(query, filter_for_relevance=True, max_results=5)
-        results = await scrape_urls(search_results)
-        return results
-    except Exception as e:
-        # Return a user-friendly error message
-        return f"Sorry, I encountered an error while searching: {str(e)}"
+    # Only use SerperClient if search provider is serper
+    if SEARCH_PROVIDER == "openai":
+        # For OpenAI search provider, this function should not be called directly
+        # The WebSearchTool from the agents module will be used instead
+        return f"The web_search function is not used when SEARCH_PROVIDER is set to 'openai'. Please check your configuration."
+    else:
+        try:
+            # Lazy initialization of SerperClient
+            serper_client = SerperClient()
+            search_results = await serper_client.search(query, filter_for_relevance=True, max_results=5)
+            results = await scrape_urls(search_results)
+            return results
+        except Exception as e:
+            # Return a user-friendly error message
+            return f"Sorry, I encountered an error while searching: {str(e)}"
 
 
 # ------- DEFINE AGENT FOR FILTERING SEARCH RESULTS BY RELEVANCE -------
@@ -151,9 +160,7 @@ class SerperClient:
             print("Error filtering results:", str(e))
             return results[:max_results]
 
-# Initiate the Serper client as a singleton
-serper_client = SerperClient()
-
+# Removed the automatic SerperClient initialization here
 
 async def scrape_urls(items: List[WebpageSnippet]) -> List[ScrapeResult]:
     """Fetch text content from provided URLs.
