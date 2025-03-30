@@ -167,7 +167,6 @@ class SerperClient:
             print("Error filtering results:", str(e))
             return results[:max_results]
 
-# Removed the automatic SerperClient initialization here
 
 async def scrape_urls(items: List[WebpageSnippet]) -> List[ScrapeResult]:
     """Fetch text content from provided URLs.

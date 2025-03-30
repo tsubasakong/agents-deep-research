@@ -6,11 +6,11 @@
 
 # Agentic Deep Research using the OpenAI Agents SDK
 
-A powerful deep research assistant built using the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), designed to perform in-depth research on any given topic.
+A powerful deep research assistant built using the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), designed to perform in-depth research on any given topic. Compatible with OpenAI, Anthropic, Gemini, DeepSeek, Perplexity, OpenRouter, Hugging Face and local models such as Ollama.
 
 It uses a multi-agent architecture that works iteratively, continually refining its understanding of a topic and producing increasingly detailed insights that feed the final report.
 
-Designed to be extendable to use custom tools and 3rd party LLMs compatible with the OpenAI API spec. When using OpenAI models, all LLM and tool calls are fully traced. 
+Designed to be extendable to use custom tools and any other 3rd party LLMs compatible with the OpenAI API spec. LLM and tool calls can be optionally traced using OpenAI's tracing feature.
 
 ## Overview
 
@@ -134,13 +134,13 @@ Run the research assistant from the command line.
 
 If you've installed via `pip`:
 ```sh
-deep-researcher --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
+deep-researcher --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10 --verbose
 ```
 
 Or if you've cloned the GitHub repo:
 
 ```sh
-python -m deep_researcher.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
+python -m deep_researcher.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10 --verbose
 ```
 
 Parameters:
@@ -199,7 +199,7 @@ LLMs are configured and managed in the `app/llm_client.py` file
 
 ## Trace Monitoring
 
-If OpenAI models are used, the Deep Research assistant integrates with OpenAI's trace monitoring system. Each research session generates a trace ID that can be used to monitor the execution flow and agent interactions in real-time through the OpenAI platform.
+The Deep Research assistant integrates with OpenAI's trace monitoring system. Each research session generates a trace ID that can be used to monitor the execution flow and agent interactions in real-time through the OpenAI platform.
 
 ## Observations and Limitations
 
