@@ -16,13 +16,12 @@ web search implementation based on environment configuration.
 
 import os
 from agents import Agent, WebSearchTool
-from ...tools import web_search
+from ...tools.web_search import web_search, SEARCH_PROVIDER
 from ...llm_client import fast_model
 from dotenv import load_dotenv
 from . import ToolAgentOutput
 
 load_dotenv()
-SEARCH_PROVIDER = os.getenv("SEARCH_PROVIDER", "serper").lower()
 
 INSTRUCTIONS = """You are a research assistant. Given an AgentTask, follow these steps:
 

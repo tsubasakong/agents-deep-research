@@ -110,7 +110,7 @@ SERPER_API_KEY=<your_key>
 ```python
 # See the /examples folder for working examples
 import asyncio
-from deep_research import IterativeResearcher, DeepResearcher
+from deep_researcher import IterativeResearcher, DeepResearcher
 
 # Run the IterativeResearcher for simple queries
 researcher = IterativeResearcher(max_iterations=5, max_time_minutes=5)
