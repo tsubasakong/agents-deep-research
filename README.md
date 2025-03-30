@@ -140,7 +140,7 @@ deep-researcher --mode deep --query "Provide a comprehensive overview of quantum
 Or if you've cloned the GitHub repo:
 
 ```sh
-python -m deep_research.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
+python -m deep_researcher.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10
 ```
 
 Parameters:
