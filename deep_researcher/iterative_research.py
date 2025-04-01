@@ -136,10 +136,6 @@ class IterativeResearcher:
         self.verbose: bool = verbose
         self.tracing: bool = tracing
         
-        if not self.tracing:
-            from agents import set_tracing_disabled
-            set_tracing_disabled(True)
-
     async def run(
             self, 
             query: str,
@@ -153,7 +149,7 @@ class IterativeResearcher:
         if self.tracing:
             trace_id = gen_trace_id()
             workflow_trace = trace("iterative_researcher", trace_id=trace_id)
-            print(f"View trace: https://platform.openai.com/traces/{trace_id}")
+            print(f"View trace: https://platform.openai.com/traces/trace?trace_id={trace_id}")
             workflow_trace.start(mark_as_current=True)
 
         self._log_message("=== Starting Iterative Research Workflow ===")

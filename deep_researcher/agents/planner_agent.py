@@ -15,7 +15,7 @@ The Agent then outputs a ReportPlan object, which includes:
 from pydantic import BaseModel, Field
 from typing import List
 from agents import Agent
-from ..llm_client import main_model
+from ..llm_client import reasoning_model
 from .tool_agents.crawl_agent import crawl_agent
 from .tool_agents.search_agent import search_agent
 from datetime import datetime
@@ -30,7 +30,7 @@ class ReportPlan(BaseModel):
     """Output from the Report Planner Agent"""
     background_context: str = Field(description="A summary of supporting context that can be passed onto the research agents")
     report_outline: List[ReportPlanSection] = Field(description="List of sections that need to be written in the report")
-
+    report_title: str = Field(description="The title of the report")
 
 INSTRUCTIONS = f"""
 You are a research manager, managing a team of research agents. Today's date is {datetime.now().strftime("%Y-%m-%d")}.
@@ -43,7 +43,8 @@ You will be given:
 
 Your task is to:
 1. Produce 1-2 paragraphs of initial background context (if needed) on the query by running web searches or crawling websites
-2. Produce an outline of the report that includes a list of section titles and the key question to be addressed in each section. 
+2. Produce an outline of the report that includes a list of section titles and the key question to be addressed in each section
+3. Provide a title for the report that will be used as the main heading
 
 Guidelines:
 - Each section should cover a single topic/question that is independent of other sections
@@ -52,9 +53,13 @@ Guidelines:
 - The background_context should be very specific to the query and include any information that is relevant for researchers across all sections of the report
 - The background_context should be draw only from web search or crawl results rather than prior knowledge (i.e. it should only be included if you have called tools)
 - For example, if the query is about a company, the background context should include some basic information about what the company does
+- DO NOT do more than 2 tool calls
+
+You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+{ReportPlan.model_json_schema()}
 """
 
-    
+
 planner_agent = Agent(
     name="PlannerAgent",
     instructions=INSTRUCTIONS,
@@ -68,6 +73,6 @@ planner_agent = Agent(
             tool_description="Use this tool to crawl a website for information relevant to the query - provide a starting URL as input"
         )
     ],
-    model=main_model,
-    output_type=ReportPlan,
+    model=reasoning_model,
+    output_type=ReportPlan
 )

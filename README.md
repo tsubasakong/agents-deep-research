@@ -12,6 +12,8 @@ It uses a multi-agent architecture that works iteratively, continually refining 
 
 Designed to be extendable to use custom tools and any other 3rd party LLMs compatible with the OpenAI API spec. LLM and tool calls can be optionally traced using OpenAI's tracing feature.
 
+Some background reading [here](https://www.j2.gg/thoughts/deep-research-how-it-works).
+
 ## Overview
 
 This package has two modes of research:

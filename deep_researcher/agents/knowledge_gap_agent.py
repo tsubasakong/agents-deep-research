@@ -45,11 +45,9 @@ Your task is to:
 
 Be specific in the gaps you identify and include relevant information as this will be passed onto another agent to process without additional context.
 
-You should output a JSON object with the following fields:
-- research_complete: bool - Whether the research and findings are complete enough to end the research loop
-- outstanding_gaps: List[str] - List of knowledge gaps that still need to be addressed
+You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+{KnowledgeGapOutput.model_json_schema()}
 """
-
 
 knowledge_gap_agent = Agent(
     name="KnowledgeGapAgent",

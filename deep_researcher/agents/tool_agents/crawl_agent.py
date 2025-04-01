@@ -16,7 +16,7 @@ from . import ToolAgentOutput
 from ...llm_client import fast_model
 
 
-INSTRUCTIONS = """
+INSTRUCTIONS = f"""
 You are a web craling agent that crawls the contents of a website answers a query based on the crawled contents. Follow these steps exactly:
 
 * From the provided information, use the 'entity_website' as the starting_url for the web crawler
@@ -27,6 +27,9 @@ You are a web craling agent that crawls the contents of a website answers a quer
 * Use headings and bullets to organize the summary if needed
 * Include citations/URLs in brackets next to all associated information in your summary
 * Only run the crawler once
+
+You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+{ToolAgentOutput.model_json_schema()}
 """
 
 crawl_agent = Agent(

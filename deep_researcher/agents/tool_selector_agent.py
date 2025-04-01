@@ -61,6 +61,9 @@ Guidelines:
 - If you know the website or domain name of an entity being researched, always include it in the query
 - If a gap doesn't clearly match any agent's capability, default to the WebSearchAgent
 - Use the history of actions / tool calls as a guide - try not to repeat yourself if an approach didn't work previously
+
+You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+{AgentSelectionPlan.model_json_schema()}
 """
 
 

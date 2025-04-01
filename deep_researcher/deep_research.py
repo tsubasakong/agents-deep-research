@@ -3,6 +3,7 @@ import time
 from .iterative_research import IterativeResearcher
 from .agents.planner_agent import planner_agent, ReportPlan, ReportPlanSection
 from .agents.proofreader_agent import ReportDraftSection, ReportDraft, proofreader_agent
+from .agents.long_writer_agent import write_report
 from typing import List
 from agents import Runner
 from agents.tracing import trace, gen_trace_id, custom_span
@@ -34,17 +35,17 @@ class DeepResearcher:
         if self.tracing:
             trace_id = gen_trace_id()
             workflow_trace = trace("deep_researcher", trace_id=trace_id)
-            print(f"View trace: https://platform.openai.com/traces/{trace_id}")
+            print(f"View trace: https://platform.openai.com/traces/trace?trace_id={trace_id}")
             workflow_trace.start(mark_as_current=True)
 
         # First build the report plan which outlines the sections and compiles any relevant background context on the query
-        report_plan = await self._build_report_plan(query)
+        report_plan: ReportPlan = await self._build_report_plan(query)
 
         # Run the independent research loops concurrently for each section and gather the results
-        research_results = await self._run_research_loops(report_plan)
+        research_results: List[str] = await self._run_research_loops(report_plan)
 
         # Create the final report from the original report plan and the drafts of each section
-        final_report = await self._create_final_report(query, report_plan, research_results)
+        final_report: str = await self._create_final_report(query, report_plan, research_results)
 
         elapsed_time = time.time() - start_time
         self._log_message(f"DeepResearcher completed in {int(elapsed_time // 60)} minutes and {int(elapsed_time % 60)} seconds")
@@ -122,7 +123,8 @@ class DeepResearcher:
         self, 
         query: str, 
         report_plan: ReportPlan, 
-        section_drafts: List[str]
+        section_drafts: List[str],
+        use_long_writer: bool = True
     ) -> str:
         """Create the final report from the original report plan and the drafts of each section"""
         if self.tracing:
@@ -142,20 +144,25 @@ class DeepResearcher:
                 )
             )
 
-        user_prompt = f"QUERY:\n{query}\n\nREPORT DRAFT:\n{report_draft.model_dump_json()}"
-
         self._log_message("\n=== Building Final Report ===")
-        # Run the proofreader agent to produce the final report
-        final_report = await Runner.run(
-            proofreader_agent,
-            user_prompt
-        )
+
+        if use_long_writer:
+            final_output = await write_report(query, report_plan.report_title, report_draft)
+        else:
+            user_prompt = f"QUERY:\n{query}\n\nREPORT DRAFT:\n{report_draft.model_dump_json()}"
+            # Run the proofreader agent to produce the final report
+            final_report = await Runner.run(
+                proofreader_agent,
+                user_prompt
+            )
+            final_output = final_report.final_output
+
         self._log_message(f"Final report completed")
 
         if self.tracing:
             span.finish(reset_current=True)
 
-        return final_report.final_output
+        return final_output
 
     def _log_message(self, message: str) -> None:
         """Log a message if verbose is True"""

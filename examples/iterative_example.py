@@ -1,10 +1,13 @@
 """
-Example usage of the DeepResearcher to produce a report.
+Example usage of the IterativeResearcher to produce a report.
 
 See iterative_output.txt for the console output from running this script, and iterative_output.pdf for the final report
 """
 
 import asyncio
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from deep_researcher import IterativeResearcher
 
 manager = IterativeResearcher(
