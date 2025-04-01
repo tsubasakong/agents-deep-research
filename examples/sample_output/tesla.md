@@ -12,7 +12,7 @@ Parameters:
 * Reasoning Model: o3-mini
 * Main Model: gpt-4o-mini
 * Fast Model: gpt-4o-mini
-* Mode: Deep
+* Mode (Simple or Deep): Deep
 * Max Iterations: 3
 
 Cost: $0.18
@@ -362,82 +362,43 @@ As Tesla heads toward 2025, its financial performance is set to reflect a blend 
 
 ## References:
 
-[1] https://www.tesla.com/ns_videos/2020-tesla-impact-report.pdf
-
-[2] https://www.tesla.com/ns_videos/Tesla-Master-Plan-Part-3.pdf
-
-[3] https://www.tesla.com/models
-
-[4] https://www.tesla.com/energy
-
-[5] https://www.tesla.com/support/autopilot
-
-[6] https://www.tesla.com/giga-nevada
-
-[7] https://www.tesla.com/megapack
-
-[8] https://www.tesla.com/megafactory
-
-[9] https://www.tesla.com/AI
-
-[10] https://www.tesla.com/manufacturing
-
-[11] https://www.tesla.com/careers/search/job/automation-engineer-manufacturing-engineering-225514
-
-[12] https://www.tesla.com/impact
-
-[13] https://www.tesla.com/giga-berlin
-
-[14] https://www.tesla.com/engineering
-
-[15] https://www.tesla.com/gigapress
-
-[16] https://www.tesla.com/supplychain
-
-[17] https://www.tesla.com/financials
-
-[18] https://ir.tesla.com/press-release/tesla-vehicle-production-deliveries-and-date-financial-results-webcast-fourth-quarter-2023
-
-[19] https://www.tesla.com/ns_videos/2023-tesla-impact-report-highlights.pdf
-
-[20] https://www.ainvest.com/news/tesla-alibaba-potential-powerhouse-partnership-china-autonomous-driving-revolution-2503/
-
-[21] https://en.wikipedia.org/wiki/Gigafactory_Shanghai
-
-[22] https://cnevpost.com/2024/01/10/automakers-nev-market-share-in-china-in-2023/
-
-[23] https://www.teslarati.com/tesla-china-overall-revenue-2023/
-
-[24] https://www.goodcarbadcar.net/tesla-china-sales-figures/
-
-[25] https://www.voanews.com/a/tesla-clears-key-regulatory-hurdles-for-self-driving-in-china-during-musk-visit/7588990.html
-
-[26] https://www.tesla.com/blog/tesla-lithium-refinery-groundbreaking
-
-[27] https://www.tesla.com/ns_videos/2021-tesla-impact-report.pdf
-
-[28] https://www.tesla.com/careers/search/job/sr-cell-engineer-4680-global-quality-239886
-
-[29] https://www.advicescout.com/tesla-battery-technology/?srsltid=AfmBOooVevQtJVdR4KBUKtXv-j48szhaBqy7zd7l4mr2OYf05cjaSwud
-
-[30] https://www.fastmarkets.com/insights/electric-vehicle-economics-how-lithium-ion-battery-costs-impact-ev-prices/
-
-[31] https://goldmansachs.com/insights/articles/electric-vehicle-battery-prices-are-expected-to-fall-almost-50-percent-by-2025
-
-[32] https://synergyfiles.com/2025/02/new-battery-technology-2025/
-
-[33] https://www.iea.org/reports/global-ev-outlook-2024
-
-[34] https://electrek.co/2024/12/10/ev-battery-prices-plummeting-great-news-for-buyers/
-
-[35] https://ir.tesla.com/_flysystem/s3/sec/000162828025002993/tsla-20250129-gen.pdf
-
-[36] https://www.accessoriesfortesla.com/post/understanding-the-future-of-tesla-stock-insights-and-predictions-for-2025
-
-[37] https://www.ainvest.com/news/tesla-2025-pain-believer-perspective-2502/
-
-[38] https://nypost.com/2025/03/26/business/byd-aims-to-double-overseas-sales-to-800k-in-2025-as-tesla-competition-heats-up/
-
-[39] https://www.barchart.com/story/news/31658195/analysts-are-seriously-divided-on-tesla-stock-is-120-or-550-more-likely-for-tsla-in-2025
-
-[40] https://ir.tesla.com/
+[1] https://www.tesla.com/ns_videos/2020-tesla-impact-report.pdf  
+[2] https://www.tesla.com/ns_videos/Tesla-Master-Plan-Part-3.pdf  
+[3] https://www.tesla.com/models  
+[4] https://www.tesla.com/energy  
+[5] https://www.tesla.com/support/autopilot  
+[6] https://www.tesla.com/giga-nevada  
+[7] https://www.tesla.com/megapack  
+[8] https://www.tesla.com/megafactory  
+[9] https://www.tesla.com/AI  
+[10] https://www.tesla.com/manufacturing  
+[11] https://www.tesla.com/careers/search/job/automation-engineer-manufacturing-engineering-225514  
+[12] https://www.tesla.com/impact  
+[13] https://www.tesla.com/giga-berlin  
+[14] https://www.tesla.com/engineering  
+[15] https://www.tesla.com/gigapress  
+[16] https://www.tesla.com/supplychain  
+[17] https://www.tesla.com/financials  
+[18] https://ir.tesla.com/press-release/tesla-vehicle-production-deliveries-and-date-financial-results-webcast-fourth-quarter-2023  
+[19] https://www.tesla.com/ns_videos/2023-tesla-impact-report-highlights.pdf  
+[20] https://www.ainvest.com/news/tesla-alibaba-potential-powerhouse-partnership-china-autonomous-driving-revolution-2503/  
+[21] https://en.wikipedia.org/wiki/Gigafactory_Shanghai  
+[22] https://cnevpost.com/2024/01/10/automakers-nev-market-share-in-china-in-2023/  
+[23] https://www.teslarati.com/tesla-china-overall-revenue-2023/  
+[24] https://www.goodcarbadcar.net/tesla-china-sales-figures/  
+[25] https://www.voanews.com/a/tesla-clears-key-regulatory-hurdles-for-self-driving-in-china-during-musk-visit/7588990.html  
+[26] https://www.tesla.com/blog/tesla-lithium-refinery-groundbreaking  
+[27] https://www.tesla.com/ns_videos/2021-tesla-impact-report.pdf  
+[28] https://www.tesla.com/careers/search/job/sr-cell-engineer-4680-global-quality-239886  
+[29] https://www.advicescout.com/tesla-battery-technology/?srsltid=AfmBOooVevQtJVdR4KBUKtXv-j48szhaBqy7zd7l4mr2OYf05cjaSwud  
+[30] https://www.fastmarkets.com/insights/electric-vehicle-economics-how-lithium-ion-battery-costs-impact-ev-prices/  
+[31] https://goldmansachs.com/insights/articles/electric-vehicle-battery-prices-are-expected-to-fall-almost-50-percent-by-2025  
+[32] https://synergyfiles.com/2025/02/new-battery-technology-2025/  
+[33] https://www.iea.org/reports/global-ev-outlook-2024  
+[34] https://electrek.co/2024/12/10/ev-battery-prices-plummeting-great-news-for-buyers/  
+[35] https://ir.tesla.com/_flysystem/s3/sec/000162828025002993/tsla-20250129-gen.pdf  
+[36] https://www.accessoriesfortesla.com/post/understanding-the-future-of-tesla-stock-insights-and-predictions-for-2025  
+[37] https://www.ainvest.com/news/tesla-2025-pain-believer-perspective-2502/  
+[38] https://nypost.com/2025/03/26/business/byd-aims-to-double-overseas-sales-to-800k-in-2025-as-tesla-competition-heats-up/  
+[39] https://www.barchart.com/story/news/31658195/analysts-are-seriously-divided-on-tesla-stock-is-120-or-550-more-likely-for-tsla-in-2025  
+[40] https://ir.tesla.com/  

@@ -134,7 +134,7 @@ async def write_report(
         final_draft += section_markdown + '\n\n'
 
     # Add the final references to the end of the report
-    final_draft += '## References:\n\n' + '\n\n'.join(all_references)
+    final_draft += '## References:\n\n' + '  \n'.join(all_references)
     return final_draft
 
 

@@ -6,7 +6,7 @@ Parameters:
 * Reasoning Model: o3-mini
 * Main Model: gpt-4o-mini
 * Fast Model: gpt-4o-mini
-* Mode: Deep
+* Mode (Simple or Deep): Deep
 * Max Iterations: 3
 
 Cost: $0.21
@@ -387,108 +387,56 @@ Addressing the challenges in quantum computing, particularly those related to er
 
 ## References:
 
-[1] https://scienceexchange.caltech.edu/topics/quantum-science-explained/quantum-superposition
-
-[2] https://en.wikipedia.org/wiki/Quantum_superposition
-
-[3] https://quantum.microsoft.com/en-us/insights/education/concepts/entanglement
-
-[4] https://spectrum.ieee.org/what-is-quantum-entanglement
-
-[5] https://en.wikipedia.org/wiki/Qubit
-
-[6] https://www.ibm.com/think/topics/qubit
-
-[7] https://www.quantum-inspire.com/kbase/superposition-and-entanglement/
-
-[8] https://www.scientificamerican.com/article/whats-a-qubit-3-ways-scientists-build-quantum-computers/
-
-[9] https://quantum.microsoft.com/en-us/insights/education/concepts/quantum-algorithms
-
-[10] https://www.techtarget.com/feature/Quantum-computing-in-drug-discovery
-
-[11] https://quantum.microsoft.com/en-us/insights/education/concepts/quantum-ai
-
-[12] https://en.wikipedia.org/wiki/Measurement_in_quantum_mechanics
-
-[13] https://en.wikipedia.org/wiki/Quantum_entanglement
-
-[14] https://news.mit.edu/2024/mit-scientists-tune-entanglement-structure-with-qubits-array-0424
-
-[15] https://quantumatlas.umd.edu/entry/measurement/
-
-[16] https://scienceexchange.caltech.edu/topics/quantum-science-explained/entanglement
-
-[17] https://theconversation.com/what-is-quantum-entanglement-a-physicist-explains-the-science-of-einsteins-spooky-action-at-a-distance-191927
-
-[18] https://www.quantamagazine.org/entanglement-made-simple-20160428/
-
-[19] https://www.quora.com/Is-classical-probability-fundamentally-different-from-quantum-probability
-
-[20] https://www.sciencedirect.com/science/article/pii/S0003491609001882
-
-[21] https://physicsworld.com/a/complex-numbers-are-essential-in-quantum-theory-experiments-reveal/
-
-[22] https://www.linkedin.com/pulse/complex-numbers-quantum-computing-muhammad-zubair-b7blf
-
-[23] https://thequantuminsider.com/2024/09/28/complex-numbers-its-complicated-philosopher-explores-the-important-but-maybe-not-indispensable-role-of-complex-numbers-in-quantum-mechanics/
-
-[24] https://en.wikipedia.org/wiki/Quantum_logic_gate
-
-[25] https://quantumai.google/cirq/build/gates
-
-[26] https://www.quera.com/glossary/measurement
-
-[27] https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit
-
-[28] https://docs.quantum.ibm.com/guides/measure-qubits
-
-[29] https://www.nature.com/articles/s41586-022-05434-1
-
-[30] https://pme.uchicago.edu/news/new-system-boosts-efficiency-quantum-error-correction
-
-[31] https://learning.quantum.ibm.com/course/foundations-of-quantum-error-correction/correcting-quantum-errors
-
-[32] https://quantum.ibm.com/
-
-[33] https://quantumai.google/
-
-[34] https://www.geeksforgeeks.org/shors-factorization-algorithm/
-
-[35] https://kaustubhrakhade.medium.com/shors-factoring-algorithm-94a0796a13b1
-
-[36] https://crypto.stackexchange.com/questions/37018/using-shors-algorithm-to-solve-the-discrete-logarithm-problem
-
-[37] https://www.classiq.io/insights/shors-algorithm-explained
-
-[38] https://en.wikipedia.org/wiki/Shor%27s_algorithm
-
-[39] https://medium.com/@michael.aldok/h-perf_grover-algorithms-and-applications-4dc3dc42c8a9
-
-[40] https://hakia.com/quantum-computing-algorithms-exploring-shors-algorithm-and-grovers-algorithm/
-
-[41] https://en.wikipedia.org/wiki/Shor's_algorithm
-
-[42] https://en.wikipedia.org/wiki/Steane_code
-
-[43] https://en.wikipedia.org/wiki/Surface_code
-
-[44] https://quantum-computing.ibm.com/docs/quantum-basics/error-correction
-
-[45] https://www.nature.com/articles/nature23665
-
-[46] https://www.sciencedirect.com/science/article/pii/S0038109821005205
-
-[47] https://www.nature.com/articles/s41567-017-0026-y
-
-[48] https://quantum-computing.ibm.com/docs/quantum-basics/decoherence
-
-[49] https://doi.org/10.1103/PhysRevLett.124.170503
-
-[50] https://arxiv.org/abs/2104.06588
-
-[51] https://www.sciencedirect.com/science/article/pii/S1350448721000054
-
-[52] https://arxiv.org/abs/1907.08401
-
-[53] https://arxiv.org/abs/2004.07128
+[1] https://scienceexchange.caltech.edu/topics/quantum-science-explained/quantum-superposition  
+[2] https://en.wikipedia.org/wiki/Quantum_superposition  
+[3] https://quantum.microsoft.com/en-us/insights/education/concepts/entanglement  
+[4] https://spectrum.ieee.org/what-is-quantum-entanglement  
+[5] https://en.wikipedia.org/wiki/Qubit  
+[6] https://www.ibm.com/think/topics/qubit  
+[7] https://www.quantum-inspire.com/kbase/superposition-and-entanglement/  
+[8] https://www.scientificamerican.com/article/whats-a-qubit-3-ways-scientists-build-quantum-computers/  
+[9] https://quantum.microsoft.com/en-us/insights/education/concepts/quantum-algorithms  
+[10] https://www.techtarget.com/feature/Quantum-computing-in-drug-discovery  
+[11] https://quantum.microsoft.com/en-us/insights/education/concepts/quantum-ai  
+[12] https://en.wikipedia.org/wiki/Measurement_in_quantum_mechanics  
+[13] https://en.wikipedia.org/wiki/Quantum_entanglement  
+[14] https://news.mit.edu/2024/mit-scientists-tune-entanglement-structure-with-qubits-array-0424  
+[15] https://quantumatlas.umd.edu/entry/measurement/  
+[16] https://scienceexchange.caltech.edu/topics/quantum-science-explained/entanglement  
+[17] https://theconversation.com/what-is-quantum-entanglement-a-physicist-explains-the-science-of-einsteins-spooky-action-at-a-distance-191927  
+[18] https://www.quantamagazine.org/entanglement-made-simple-20160428/  
+[19] https://www.quora.com/Is-classical-probability-fundamentally-different-from-quantum-probability  
+[20] https://www.sciencedirect.com/science/article/pii/S0003491609001882  
+[21] https://physicsworld.com/a/complex-numbers-are-essential-in-quantum-theory-experiments-reveal/  
+[22] https://www.linkedin.com/pulse/complex-numbers-quantum-computing-muhammad-zubair-b7blf  
+[23] https://thequantuminsider.com/2024/09/28/complex-numbers-its-complicated-philosopher-explores-the-important-but-maybe-not-indispensable-role-of-complex-numbers-in-quantum-mechanics/  
+[24] https://en.wikipedia.org/wiki/Quantum_logic_gate  
+[25] https://quantumai.google/cirq/build/gates  
+[26] https://www.quera.com/glossary/measurement  
+[27] https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit  
+[28] https://docs.quantum.ibm.com/guides/measure-qubits  
+[29] https://www.nature.com/articles/s41586-022-05434-1  
+[30] https://pme.uchicago.edu/news/new-system-boosts-efficiency-quantum-error-correction  
+[31] https://learning.quantum.ibm.com/course/foundations-of-quantum-error-correction/correcting-quantum-errors  
+[32] https://quantum.ibm.com/  
+[33] https://quantumai.google/  
+[34] https://www.geeksforgeeks.org/shors-factorization-algorithm/  
+[35] https://kaustubhrakhade.medium.com/shors-factoring-algorithm-94a0796a13b1  
+[36] https://crypto.stackexchange.com/questions/37018/using-shors-algorithm-to-solve-the-discrete-logarithm-problem  
+[37] https://www.classiq.io/insights/shors-algorithm-explained  
+[38] https://en.wikipedia.org/wiki/Shor%27s_algorithm  
+[39] https://medium.com/@michael.aldok/h-perf_grover-algorithms-and-applications-4dc3dc42c8a9  
+[40] https://hakia.com/quantum-computing-algorithms-exploring-shors-algorithm-and-grovers-algorithm/  
+[41] https://en.wikipedia.org/wiki/Shor's_algorithm  
+[42] https://en.wikipedia.org/wiki/Steane_code  
+[43] https://en.wikipedia.org/wiki/Surface_code  
+[44] https://quantum-computing.ibm.com/docs/quantum-basics/error-correction  
+[45] https://www.nature.com/articles/nature23665  
+[46] https://www.sciencedirect.com/science/article/pii/S0038109821005205  
+[47] https://www.nature.com/articles/s41567-017-0026-y  
+[48] https://quantum-computing.ibm.com/docs/quantum-basics/decoherence  
+[49] https://doi.org/10.1103/PhysRevLett.124.170503  
+[50] https://arxiv.org/abs/2104.06588  
+[51] https://www.sciencedirect.com/science/article/pii/S1350448721000054  
+[52] https://arxiv.org/abs/1907.08401  
+[53] https://arxiv.org/abs/2004.07128  

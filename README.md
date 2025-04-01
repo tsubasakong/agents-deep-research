@@ -36,6 +36,17 @@ The flow of the `DeepResearcher` is as follows:
 
 It is worth noting that the deep research agent does not ask clarifying questions at the start, so can be used in an automated fashion.
 
+## Sample Output
+
+Deep Research Examples (using DeepResearcher):
+- [Text Book on Quantum Computing](examples/sample_output/quantum_computing.md) - 5,253 words
+- [Deep-Dive on Tesla](examples/sample_output/tesla.md) - 4,732 words
+- [Life and Works of Plato](examples/sample_output/plato.md) - 3,678 words
+
+Simple Research Examples (using IterativeResearcher):
+- [Quantera Market Size](examples/sample_output/quantera_market_size.md) - 1,001 words
+- [UK Government Policies](examples/sample_output/labour_policies.md) - 1,077 words
+
 ## Flow Diagram
 
 ### IterativeResearcher Flow

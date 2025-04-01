@@ -6,7 +6,7 @@ Parameters:
 * Reasoning Model: o3-mini
 * Main Model: gpt-4o-mini
 * Fast Model: gpt-4o-mini
-* Mode: Deep
+* Mode (Simple or Deep): Deep
 * Max Iterations: 3
 
 Cost: $0.15
@@ -276,66 +276,35 @@ Plato's contributions to philosophy have profoundly shaped Western thought, perm
 
 ## References:
 
-[1] https://www.britannica.com/biography/Plato
-
-[2] https://en.wikipedia.org/wiki/Plato
-
-[3] https://www.biography.com/scholars-educators/plato
-
-[4] https://iep.utm.edu/plato/
-
-[5] https://www.history.com/articles/plato
-
-[6] https://plato-dialogues.org/faq/faq003.htm
-
-[7] https://medium.com/@tcherry/platos-ethical-theory-a-synthesis-28c55b2495fa
-
-[8] https://www.classicsforall.org.uk
-
-[9] https://www.iep.utm.edu/plato/
-
-[10] https://en.wikipedia.org/wiki/Plato#Philosophical_life
-
-[11] https://www.countercurrents.org/2021/03/platos-educational-theory-and-its-impact-in-modern-society/
-
-[12] https://www.scu.edu/ethics/focus-areas/online-ethics-resources/resources/platos-philosophy-of-education/
-
-[13] https://www.iep.utm.edu/plato/#H4
-
-[14] https://www.jstor.org/stable/3824208
-
-[15] https://medium.com/@tcherry/platos-educational-theory-a-synthesis-28c55b2495fa
-
-[16] https://en.wikipedia.org/wiki/Plato#Philosophy
-
-[17] https://iep.utm.edu/republic/
-
-[18] https://iep.utm.edu/phaedo/
-
-[19] https://lit.chart.com/symposium
-
-[20] https://neelburton.com/
-
-[21] https://en.wikipedia.org/wiki/Theory_of_forms
-
-[22] https://ndpr.nd.edu/reviews/plato-on-knowledge-and-forms-selected-essays/
-
-[23] https://www.sayloracademy.com
-
-[24] https://www.psychologytoday.com
-
-[25] https://fiveable.me
-
-[26] https://plato.stanford.edu/entries/plato/
-
-[27] https://en.wikipedia.org/wiki/Platonism
-
-[28] https://www.worldhistory.org/collection/232/platos-life--influence/
-
-[29] https://ndpr.nd.edu/reviews/rhapsody-of-philosophy-dialogues-with-plato-in-contemporary-thought/
-
-[30] https://bmcr.brynmawr.edu/1992/1992.05.09/
-
-[31] https://platointelligence.com/roundup-of-modern-interpretations-of-platos-philosophy/
-
-[32] https://www.annualreviews.org/journal=polsci
+[1] https://www.britannica.com/biography/Plato  
+[2] https://en.wikipedia.org/wiki/Plato  
+[3] https://www.biography.com/scholars-educators/plato  
+[4] https://iep.utm.edu/plato/  
+[5] https://www.history.com/articles/plato  
+[6] https://plato-dialogues.org/faq/faq003.htm  
+[7] https://medium.com/@tcherry/platos-ethical-theory-a-synthesis-28c55b2495fa  
+[8] https://www.classicsforall.org.uk  
+[9] https://www.iep.utm.edu/plato/  
+[10] https://en.wikipedia.org/wiki/Plato#Philosophical_life  
+[11] https://www.countercurrents.org/2021/03/platos-educational-theory-and-its-impact-in-modern-society/  
+[12] https://www.scu.edu/ethics/focus-areas/online-ethics-resources/resources/platos-philosophy-of-education/  
+[13] https://www.iep.utm.edu/plato/#H4  
+[14] https://www.jstor.org/stable/3824208  
+[15] https://medium.com/@tcherry/platos-educational-theory-a-synthesis-28c55b2495fa  
+[16] https://en.wikipedia.org/wiki/Plato#Philosophy  
+[17] https://iep.utm.edu/republic/  
+[18] https://iep.utm.edu/phaedo/  
+[19] https://lit.chart.com/symposium  
+[20] https://neelburton.com/  
+[21] https://en.wikipedia.org/wiki/Theory_of_forms  
+[22] https://ndpr.nd.edu/reviews/plato-on-knowledge-and-forms-selected-essays/  
+[23] https://www.sayloracademy.com  
+[24] https://www.psychologytoday.com  
+[25] https://fiveable.me  
+[26] https://plato.stanford.edu/entries/plato/  
+[27] https://en.wikipedia.org/wiki/Platonism  
+[28] https://www.worldhistory.org/collection/232/platos-life--influence/  
+[29] https://ndpr.nd.edu/reviews/rhapsody-of-philosophy-dialogues-with-plato-in-contemporary-thought/  
+[30] https://bmcr.brynmawr.edu/1992/1992.05.09/  
+[31] https://platointelligence.com/roundup-of-modern-interpretations-of-platos-philosophy/  
+[32] https://www.annualreviews.org/journal=polsci  

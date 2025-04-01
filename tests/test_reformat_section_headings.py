@@ -40,6 +40,3 @@ def test_reformat_section_headings():
         """
     )
     assert reformat_section_headings(mixed_input) == expected_mixed
-
-
-test_reformat_section_headings()
