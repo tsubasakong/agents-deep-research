@@ -4,8 +4,8 @@ from .iterative_research import IterativeResearcher
 from .agents.planner_agent import planner_agent, ReportPlan, ReportPlanSection
 from .agents.proofreader_agent import ReportDraftSection, ReportDraft, proofreader_agent
 from .agents.long_writer_agent import write_report
+from .agents.baseclass import ResearchRunner
 from typing import List
-from agents import Runner
 from agents.tracing import trace, gen_trace_id, custom_span
 
 class DeepResearcher:
@@ -63,7 +63,7 @@ class DeepResearcher:
 
         self._log_message("=== Building Report Plan ===")
         user_message = f"QUERY: {query}"
-        result = await Runner.run(
+        result = await ResearchRunner.run(
             planner_agent,
             user_message
         )
@@ -151,7 +151,7 @@ class DeepResearcher:
         else:
             user_prompt = f"QUERY:\n{query}\n\nREPORT DRAFT:\n{report_draft.model_dump_json()}"
             # Run the proofreader agent to produce the final report
-            final_report = await Runner.run(
+            final_report = await ResearchRunner.run(
                 proofreader_agent,
                 user_prompt
             )

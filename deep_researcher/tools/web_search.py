@@ -3,12 +3,14 @@ import os
 import ssl
 import aiohttp
 import asyncio
-from agents import function_tool, Agent, Runner
+from agents import function_tool
+from ..agents.baseclass import ResearchAgent, ResearchRunner
+from ..agents.utils.parse_output import create_type_parser
 from typing import List, Union, Optional
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from ..llm_client import fast_model
+from ..llm_client import fast_model, model_supports_structured_output
 
 load_dotenv()
 CONTENT_LENGTH_LIMIT = 10000  # Trim scraped content to this length to avoid large context / token limit issues
@@ -73,19 +75,25 @@ async def web_search(query: str) -> Union[List[ScrapeResult], str]:
 
 # ------- DEFINE AGENT FOR FILTERING SEARCH RESULTS BY RELEVANCE -------
 
-FILTER_AGENT_INSTRUCTIONS = """
+FILTER_AGENT_INSTRUCTIONS = f"""
 You are a search result filter. Your task is to analyze a list of SERP search results and determine which ones are relevant
 to the original query based on the link, title and snippet. Return only the relevant results in the specified format. 
 
 - Remove any results that refer to entities that have similar names to the queried entity, but are not the same.
 - E.g. if the query asks about a company "Amce Inc, acme.com", remove results with "acmesolutions.com" or "acme.net" in the link.
+
+Only output JSON. Follow the JSON schema below. Do not output anything else. I will be parsing this with Pydantic so output valid JSON only:
+{SearchResults.model_json_schema()}
 """
 
-filter_agent = Agent(
+selected_model = fast_model
+
+filter_agent = ResearchAgent(
     name="SearchFilterAgent",
     instructions=FILTER_AGENT_INSTRUCTIONS,
-    model=fast_model,
-    output_type=SearchResults
+    model=selected_model,
+    output_type=SearchResults if model_supports_structured_output(selected_model) else None,
+    output_parser=create_type_parser(SearchResults) if not model_supports_structured_output(selected_model) else None
 )
 
 # ------- DEFINE UNDERLYING TOOL LOGIC -------
@@ -160,7 +168,7 @@ class SerperClient:
         """
         
         try:
-            result = await Runner.run(filter_agent, user_prompt)
+            result = await ResearchRunner.run(filter_agent, user_prompt)
             output = result.final_output_as(SearchResults)
             return output.results_list
         except Exception as e:

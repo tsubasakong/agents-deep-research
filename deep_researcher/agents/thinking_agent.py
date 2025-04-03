@@ -1,4 +1,4 @@
-from agents import Agent
+from .baseclass import ResearchAgent
 from ..llm_client import reasoning_model
 from datetime import datetime
 
@@ -28,7 +28,7 @@ Guidelines:
 """
 
 
-thinking_agent = Agent(
+thinking_agent = ResearchAgent(
     name="ThinkingAgent",
     instructions=INSTRUCTIONS,
     model=reasoning_model,

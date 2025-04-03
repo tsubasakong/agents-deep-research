@@ -19,9 +19,10 @@ The Agent then:
 
 from pydantic import BaseModel, Field
 from typing import List
-from agents import Agent
-from ..llm_client import fast_model
+from .baseclass import ResearchAgent
+from ..llm_client import fast_model, model_supports_structured_output
 from datetime import datetime
+from .utils.parse_output import create_type_parser
 
 class KnowledgeGapOutput(BaseModel):
     """Output from the Knowledge Gap Agent"""
@@ -45,13 +46,16 @@ Your task is to:
 
 Be specific in the gaps you identify and include relevant information as this will be passed onto another agent to process without additional context.
 
-You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+Only output JSON and follow the JSON schema below. Do not output anything else. I will be parsing this with Pydantic so output valid JSON only:
 {KnowledgeGapOutput.model_json_schema()}
 """
 
-knowledge_gap_agent = Agent(
+selected_model = fast_model
+
+knowledge_gap_agent = ResearchAgent(
     name="KnowledgeGapAgent",
     instructions=INSTRUCTIONS,
-    model=fast_model,
-    output_type=KnowledgeGapOutput,
+    model=selected_model,
+    output_type=KnowledgeGapOutput if model_supports_structured_output(selected_model) else None,
+    output_parser=create_type_parser(KnowledgeGapOutput) if not model_supports_structured_output(selected_model) else None
 )

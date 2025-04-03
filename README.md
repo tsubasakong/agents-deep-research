@@ -1,6 +1,11 @@
 <div align="center">
 
-[![PyPI version](https://badge.fury.io/py/deep-researcher.svg)](https://badge.fury.io/py/deep-researcher)
+[![GitHub Stars](https://img.shields.io/github/stars/qx-labs/agents-deep-research?style=social)](https://github.com/qx-labs/agents-deep-research/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/qx-labs/agents-deep-research?style=social)](https://github.com/qx-labs/agents-deep-research/network/members)
+
+[![PyPI version](https://badge.fury.io/py/deep-researcher.svg)](https://pypi.org/project/deep-researcher/)
+[![License](https://img.shields.io/github/license/qx-labs/agents-deep-research)](https://github.com/qx-labs/agents-deep-research/blob/main/LICENSE)
+[![PyPI Downloads](https://static.pepy.tech/badge/deep-researcher)](https://pepy.tech/projects/deep-researcher)
 
 </div>
 
@@ -216,6 +221,10 @@ The Deep Research assistant integrates with OpenAI's trace monitoring system. Ea
 
 ## Observations and Limitations
 
+### Rate Limits
+- The `DeepResearcher` runs a lot of searches and API calls in parallel (at any given point in time it could be ingesting 50-60 different web pages). As a result you may find that yourself hitting rate limits for OpenAI, Gemini, Anthropic and other model providers particularly if you are on lower or free tiers. 
+- If you run into these errors, you may wish to use the `IterativeResearcher` instead which is less consumptive of API calls.
+
 ### **Model Choice:** 
 
 - If using OpenAI models, we find that the `gpt-4o-mini` is as good if not better at tool selection than `o3-mini` (which is consistent with [this leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)). Given the speed and cost benefits we therefore advise using `gpt-4o-mini` as the model for the majority of agents in our workflow, with `o3-mini` for planning tasks and `gpt-4o` for final writing.
@@ -232,7 +241,7 @@ We include an `output_length` parameter for the `IterativeResearcher` to give th
 
 ## TODOs:
 
-- [ ] Add compatibility with other search providers (e.g. Bing, Tavily, DuckDuckGo etc.)
+- [ ] Add compatibility with other search providers (e.g. SearXNG, Bing, Tavily, DuckDuckGo etc.)
 - [ ] Add caching (e.g. Redis) of scraped web pages to avoid duplicate work/calls
 - [ ] Add more specialized research tools (e.g. Wikipedia, arXiv, data analysis etc.)
 - [ ] Add PDF parser

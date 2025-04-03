@@ -18,18 +18,19 @@ The available agents are:
 """
 
 from pydantic import BaseModel, Field
-from typing import List
-from agents import Agent
-from ..llm_client import fast_model
+from typing import List, Optional
+from ..llm_client import fast_model, model_supports_structured_output
 from datetime import datetime
+from .baseclass import ResearchAgent
+from .utils.parse_output import create_type_parser
 
 
 class AgentTask(BaseModel):
     """A task for a specific agent to address knowledge gaps"""
-    gap: str = Field(description="The knowledge gap being addressed")
+    gap: Optional[str] = Field(description="The knowledge gap being addressed", default=None)
     agent: str = Field(description="The name of the agent to use")
     query: str = Field(description="The specific query for the agent")
-    entity_website: str = Field(description="The website of the entity being researched, if known")
+    entity_website: Optional[str] = Field(description="The website of the entity being researched, if known", default=None)
 
 
 class AgentSelectionPlan(BaseModel):
@@ -62,14 +63,16 @@ Guidelines:
 - If a gap doesn't clearly match any agent's capability, default to the WebSearchAgent
 - Use the history of actions / tool calls as a guide - try not to repeat yourself if an approach didn't work previously
 
-You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+Only output JSON. Follow the JSON schema below. Do not output anything else. I will be parsing this with Pydantic so output valid JSON only:
 {AgentSelectionPlan.model_json_schema()}
 """
 
+selected_model = fast_model
 
-tool_selector_agent = Agent(
+tool_selector_agent = ResearchAgent(
     name="ToolSelectorAgent",
     instructions=INSTRUCTIONS,
-    model=fast_model,
-    output_type=AgentSelectionPlan,
+    model=selected_model,
+    output_type=AgentSelectionPlan if model_supports_structured_output(selected_model) else None,
+    output_parser=create_type_parser(AgentSelectionPlan) if not model_supports_structured_output(selected_model) else None
 )

@@ -10,10 +10,11 @@ The Agent then:
 4. Returns the formatted summary as a string
 """
 
-from agents import Agent
 from ...tools import crawl_website
 from . import ToolAgentOutput
-from ...llm_client import fast_model
+from ...llm_client import fast_model, model_supports_structured_output
+from ..baseclass import ResearchAgent
+from ..utils.parse_output import create_type_parser
 
 
 INSTRUCTIONS = f"""
@@ -28,14 +29,17 @@ You are a web craling agent that crawls the contents of a website answers a quer
 * Include citations/URLs in brackets next to all associated information in your summary
 * Only run the crawler once
 
-You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+Only output JSON. Follow the JSON schema below. Do not output anything else. I will be parsing this with Pydantic so output valid JSON only:
 {ToolAgentOutput.model_json_schema()}
 """
 
-crawl_agent = Agent(
+selected_model = fast_model
+
+crawl_agent = ResearchAgent(
     name="SiteCrawlerAgent",
-    instructions="You are a site crawler agent that crawls a website and returns the results. ",
+    instructions=INSTRUCTIONS,
     tools=[crawl_website],
-    model=fast_model,
-    output_type=ToolAgentOutput,
+    model=selected_model,
+    output_type=ToolAgentOutput if model_supports_structured_output(selected_model) else None,
+    output_parser=create_type_parser(ToolAgentOutput) if not model_supports_structured_output(selected_model) else None
 )

@@ -14,11 +14,13 @@ The Agent then outputs a ReportPlan object, which includes:
 
 from pydantic import BaseModel, Field
 from typing import List
-from agents import Agent
-from ..llm_client import reasoning_model
+from .baseclass import ResearchAgent
+from ..llm_client import reasoning_model, model_supports_structured_output
 from .tool_agents.crawl_agent import crawl_agent
 from .tool_agents.search_agent import search_agent
+from .utils.parse_output import create_type_parser
 from datetime import datetime
+
 
 class ReportPlanSection(BaseModel):
     """A section of the report that needs to be written"""
@@ -31,6 +33,7 @@ class ReportPlan(BaseModel):
     background_context: str = Field(description="A summary of supporting context that can be passed onto the research agents")
     report_outline: List[ReportPlanSection] = Field(description="List of sections that need to be written in the report")
     report_title: str = Field(description="The title of the report")
+
 
 INSTRUCTIONS = f"""
 You are a research manager, managing a team of research agents. Today's date is {datetime.now().strftime("%Y-%m-%d")}.
@@ -55,14 +58,15 @@ Guidelines:
 - For example, if the query is about a company, the background context should include some basic information about what the company does
 - DO NOT do more than 2 tool calls
 
-You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+Only output JSON. Follow the JSON schema below. Do not output anything else. I will be parsing this with Pydantic so output valid JSON only:
 {ReportPlan.model_json_schema()}
 """
 
+selected_model = reasoning_model
 
-planner_agent = Agent(
-    name="PlannerAgent",
-    instructions=INSTRUCTIONS,
+planner_agent = ResearchAgent(
+        name="PlannerAgent",
+        instructions=INSTRUCTIONS,
     tools=[
         search_agent.as_tool(
             tool_name="web_search",
@@ -73,6 +77,7 @@ planner_agent = Agent(
             tool_description="Use this tool to crawl a website for information relevant to the query - provide a starting URL as input"
         )
     ],
-    model=reasoning_model,
-    output_type=ReportPlan
+    model=selected_model,
+    output_type=ReportPlan if model_supports_structured_output(selected_model) else None,
+    output_parser=create_type_parser(ReportPlan) if not model_supports_structured_output(selected_model) else None
 )

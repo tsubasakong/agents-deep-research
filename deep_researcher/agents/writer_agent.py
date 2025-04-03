@@ -20,7 +20,7 @@ The Agent then:
 
 The WriterAgent defined here generates the final structured report in markdown format.
 """
-from agents import Agent
+from .baseclass import ResearchAgent
 from ..llm_client import main_model
 from datetime import datetime
 
@@ -47,8 +47,7 @@ GUIDELINES:
 * If any additional guidelines are provided in the user prompt, follow them exactly and give them precedence over these system instructions.
 """
 
-
-writer_agent = Agent(
+writer_agent = ResearchAgent(
     name="WriterAgent",
     instructions=INSTRUCTIONS,
     model=main_model,

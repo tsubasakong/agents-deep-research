@@ -2,7 +2,8 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import Dict, List, Optional
-from agents import Runner, custom_span, gen_trace_id, trace
+from agents import custom_span, gen_trace_id, trace
+from .agents.baseclass import ResearchRunner
 from .agents.writer_agent import writer_agent
 from .agents.knowledge_gap_agent import KnowledgeGapOutput, knowledge_gap_agent
 from .agents.tool_selector_agent import AgentTask, AgentSelectionPlan, tool_selector_agent
@@ -229,7 +230,7 @@ class IterativeResearcher:
         {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}        
         """
 
-        result = await Runner.run(
+        result = await ResearchRunner.run(
             knowledge_gap_agent,
             input_str,
         )
@@ -266,7 +267,7 @@ class IterativeResearcher:
         {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}
         """
         
-        result = await Runner.run(
+        result = await ResearchRunner.run(
             tool_selector_agent,
             input_str,
         )
@@ -312,7 +313,7 @@ class IterativeResearcher:
             agent_name = task.agent
             agent = TOOL_AGENTS.get(agent_name)
             if agent:
-                result = await Runner.run(
+                result = await ResearchRunner.run(
                     agent,
                     task.model_dump_json(),
                 )
@@ -346,7 +347,7 @@ class IterativeResearcher:
         HISTORY OF ACTIONS, FINDINGS AND THOUGHTS:
         {self.conversation.compile_conversation_history() or "No previous actions, findings or thoughts available."}
         """
-        result = await Runner.run(
+        result = await ResearchRunner.run(
             thinking_agent,
             input_str,
         )
@@ -381,7 +382,7 @@ class IterativeResearcher:
         {all_findings}
         """
 
-        result = await Runner.run(
+        result = await ResearchRunner.run(
             writer_agent,
             input_str,
         )

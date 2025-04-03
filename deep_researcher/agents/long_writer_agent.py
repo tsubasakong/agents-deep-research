@@ -20,8 +20,9 @@ The Agent then:
 3. Produces an updated draft of the new section to fit the flow of the report
 4. Returns the updated draft of the new section along with references/citations
 """
-from agents import Agent, Runner
-from ..llm_client import fast_model
+from .baseclass import ResearchAgent, ResearchRunner
+from ..llm_client import fast_model, model_supports_structured_output
+from .utils.parse_output import create_type_parser
 from datetime import datetime
 from pydantic import BaseModel, Field
 from .proofreader_agent import ReportDraft
@@ -63,15 +64,18 @@ GUIDELINES:
 - Format the final output and references section as markdown
 - Do not include a title for the reference section, just a list of numbered references
 
-You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+Only output JSON. Follow the JSON schema below. Do not output anything else. I will be parsing this with Pydantic so output valid JSON only:
 {LongWriterOutput.model_json_schema()}
 """
 
-long_writer_agent = Agent(
+selected_model = fast_model
+
+long_writer_agent = ResearchAgent(
     name="LongWriterAgent",
     instructions=INSTRUCTIONS,
-    model=fast_model,
-    output_type=LongWriterOutput,
+    model=selected_model,
+    output_type=LongWriterOutput if model_supports_structured_output(selected_model) else None,
+    output_parser=create_type_parser(LongWriterOutput) if not model_supports_structured_output(selected_model) else None
 )
 
 
@@ -101,7 +105,7 @@ async def write_next_section(
     </DRAFT OF NEXT SECTION>
     """
 
-    result = await Runner.run(
+    result = await ResearchRunner.run(
         long_writer_agent,
         user_message,
     )
@@ -115,8 +119,6 @@ async def write_report(
     report_draft: ReportDraft,
 ) -> str:
     """Write the final report by iteratively writing each section"""
-
-    report_plan = [section.section_title for section in report_draft.sections]
 
     # Initialize the final draft of the report with the title and table of contents
     final_draft = f"# {report_title}\n\n" + "## Table of Contents\n\n" + "\n".join([f"{i+1}. {section.section_title}" for i, section in enumerate(report_draft.sections)]) + "\n\n"

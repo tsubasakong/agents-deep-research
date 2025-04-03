@@ -14,14 +14,12 @@ The agent can use either OpenAI's built-in web search capability or a custom
 web search implementation based on environment configuration.
 """
 
-import os
-from agents import Agent, WebSearchTool
+from agents import WebSearchTool
 from ...tools.web_search import web_search, SEARCH_PROVIDER
-from ...llm_client import fast_model
-from dotenv import load_dotenv
+from ...llm_client import fast_model, model_supports_structured_output, get_base_url
 from . import ToolAgentOutput
-
-load_dotenv()
+from ..baseclass import ResearchAgent
+from ..utils.parse_output import create_type_parser
 
 INSTRUCTIONS = f"""You are a research assistant that specializes in retrieving and summarizing information from the web.
 
@@ -40,19 +38,25 @@ GUIDELINES:
 - Include citations/URLs in brackets next to all associated information in your summary
 - Do not make additional searches
 
-You should output a JSON object matching this schema (output the raw JSON without wrapping it in a code block):
+Only output JSON. Follow the JSON schema below. Do not output anything else. I will be parsing this with Pydantic so output valid JSON only:
 {ToolAgentOutput.model_json_schema()}
 """
 
-if SEARCH_PROVIDER == "openai":
+selected_model = fast_model
+provider_base_url = get_base_url(selected_model)
+
+if SEARCH_PROVIDER == "openai" and 'openai.com' not in provider_base_url:
+    raise ValueError(f"You have set the SEARCH_PROVIDER to 'openai', but are using the model {str(selected_model.model)} which is not an OpenAI model")
+elif SEARCH_PROVIDER == "openai":
     web_search_tool = WebSearchTool()
 else:
     web_search_tool = web_search
 
-search_agent = Agent(
+search_agent = ResearchAgent(
     name="WebSearchAgent",
     instructions=INSTRUCTIONS,
     tools=[web_search_tool],
-    model=fast_model,
-    output_type=ToolAgentOutput
+    model=selected_model,
+    output_type=ToolAgentOutput if model_supports_structured_output(selected_model) else None,
+    output_parser=create_type_parser(ToolAgentOutput) if not model_supports_structured_output(selected_model) else None
 )

@@ -1,6 +1,7 @@
 import asyncio
 from deep_researcher.agents.planner_agent import planner_agent, ReportPlan
-from agents import Runner, gen_trace_id, trace
+from agents import gen_trace_id, trace
+from deep_researcher import ResearchRunner
 
 
 async def run_report_planner(query):
@@ -8,7 +9,7 @@ async def run_report_planner(query):
 
     with trace("Deep Research trace", trace_id=trace_id):
         print(f"View trace: https://platform.openai.com/traces/{trace_id}")
-        result = await Runner.run(planner_agent, query)
+        result = await ResearchRunner.run(planner_agent, query)
         plan = result.final_output_as(ReportPlan)
         return plan
 

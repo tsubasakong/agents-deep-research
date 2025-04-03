@@ -1,4 +1,5 @@
 import os
+from typing import Union
 from openai import AsyncOpenAI
 from agents import OpenAIChatCompletionsModel, OpenAIResponsesModel, set_tracing_export_api_key, set_tracing_disabled
 from dotenv import load_dotenv
@@ -115,4 +116,16 @@ fast_model = provider_mapping[FAST_MODEL_PROVIDER]["model"](
     openai_client=fast_client
 )
 
-__all__ = ["reasoning_model", "main_model", "fast_model"]
+
+def get_base_url(model: Union[OpenAIChatCompletionsModel, OpenAIResponsesModel]) -> str:
+    """Utility function to get the base URL for a given model"""
+    return str(model._client._base_url)
+
+
+def model_supports_structured_output(model: Union[OpenAIChatCompletionsModel, OpenAIResponsesModel]) -> bool:
+    """Utility function to check if a model supports structured output"""
+    structured_output_providers = ["openai.com", "anthropic.com"]
+    return any(provider in get_base_url(model) for provider in structured_output_providers)
+
+
+__all__ = ["reasoning_model", "main_model", "fast_model", "get_base_url", "model_supports_structured_output"]
