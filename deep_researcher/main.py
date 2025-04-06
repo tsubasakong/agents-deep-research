@@ -4,9 +4,28 @@ from .iterative_research import IterativeResearcher
 from .deep_research import DeepResearcher
 from typing import Literal
 from dotenv import load_dotenv
+import os
+from datetime import datetime
 
 load_dotenv(override=True)
 
+def save_report_to_file(report: str, query: str) -> str:
+    """Save the report to a markdown file with a timestamp in the filename."""
+    # Create reports directory if it doesn't exist
+    os.makedirs('reports', exist_ok=True)
+    
+    # Create a filename based on the query and timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Clean the query to make it filename-friendly
+    clean_query = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in query)
+    clean_query = clean_query[:50]  # Limit length
+    filename = f"reports/report_{clean_query}_{timestamp}.md"
+    
+    # Save the report
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(report)
+    
+    return filename
 
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Deep Research Assistant")
@@ -25,6 +44,8 @@ async def main() -> None:
                        help="Print status updates to the console")
     parser.add_argument("--tracing", action="store_true",
                        help="Enable tracing for the research (only valid for OpenAI models)")
+    parser.add_argument("--save-to-file", action="store_true",
+                       help="Save the report to a markdown file")
     
     args = parser.parse_args()
     
@@ -57,6 +78,10 @@ async def main() -> None:
 
     print("\n=== Final Report ===")
     print(report)
+    
+    if args.save_to_file:
+        filename = save_report_to_file(report, query)
+        print(f"\nReport saved to: {filename}")
 
 # Command line entry point
 def cli_entry():

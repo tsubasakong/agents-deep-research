@@ -76,3 +76,6 @@ $RECYCLE.BIN/
 .nfs*
 
 sandbox/
+
+# output report folder
+reports/
