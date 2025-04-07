@@ -17,12 +17,14 @@ class DeepResearcher:
             max_iterations: int = 5,
             max_time_minutes: int = 10,
             verbose: bool = True,
-            tracing: bool = False
+            tracing: bool = False,
+            use_claude: bool = False
         ):
         self.max_iterations = max_iterations
         self.max_time_minutes = max_time_minutes
         self.verbose = verbose
         self.tracing = tracing
+        self.use_claude = use_claude
 
         if not self.tracing:
             from agents import set_tracing_disabled
@@ -93,7 +95,8 @@ class DeepResearcher:
                 max_iterations=self.max_iterations,
                 max_time_minutes=self.max_time_minutes,
                 verbose=self.verbose,
-                tracing=False  # Do not trace as this will conflict with the tracing we already have set up for the deep researcher
+                tracing=False,  # Do not trace as this will conflict with the tracing we already have set up for the deep researcher
+                use_claude=self.use_claude
             )
             args = {
                 "query": section.key_question,

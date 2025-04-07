@@ -17,6 +17,8 @@ It uses a multi-agent architecture that works iteratively, continually refining 
 
 Designed to be extendable to use custom tools and any other 3rd party LLMs compatible with the OpenAI API spec. LLM and tool calls can be optionally traced using OpenAI's tracing feature.
 
+Now with support for using Claude with MCP (Model Context Protocol) for more streamlined tool usage.
+
 Some background reading [here](https://www.j2.gg/thoughts/deep-research-how-it-works).
 
 ## Overview
@@ -41,6 +43,22 @@ The flow of the `DeepResearcher` is as follows:
 
 It is worth noting that the deep research agent does not ask clarifying questions at the start, so can be used in an automated fashion.
 
+## Model Context Protocol (MCP) with Claude
+
+This project now supports using Claude with the Model Context Protocol (MCP) for a more streamlined research workflow. When enabled:
+
+- Claude acts as a single assistant that can directly use tools (web search and website crawling)
+- Tool selection and execution happens within Claude's conversation context
+- Claude decides when and how to use tools based on the knowledge gap
+- This reduces the number of model calls and simplifies the agent flow
+
+To use Claude with MCP:
+- Set `USE_CLAUDE=true` in your `.env` file, or
+- Pass `--use-claude` flag when running from the command line, or
+- Set `use_claude=True` when initializing `IterativeResearcher` or `DeepResearcher`
+
+You must have `ANTHROPIC_API_KEY` set in your environment for Claude to work.
+
 ## Sample Output
 
 Deep Research Examples (using DeepResearcher):
@@ -54,7 +72,7 @@ Simple Research Examples (using IterativeResearcher):
 
 ## Flow Diagram
 
-### IterativeResearcher Flow
+### IterativeResearcher Flow (Default)
 
 ```mermaid
 flowchart LR
@@ -64,6 +82,22 @@ flowchart LR
         B["Knowledge<br>Gap Agent"] -->|"Current gaps<br>& objective"| C["Tool Selector<br>Agent"]
         C -->|"Tool queries<br>(run in parallel)"| D["Tool Agents<br>- Web Search<br>- Crawler<br>- Custom tools"]
         D -->|"New findings"| E["Observations<br>Agent"]
+        E --> |"Thoughts on findings<br>and research strategy"| B
+    end
+
+    E --> F["Writer Agent<br>(final output<br>with references)"]
+```
+
+### IterativeResearcher Flow (with Claude MCP)
+
+```mermaid
+flowchart LR
+    A["User Input<br>- query<br>- max_iterations<br>- max_time<br>- output_instructions"] --> B
+
+    subgraph "Deep Research Loop"
+        B["Knowledge<br>Gap Agent"] -->|"Current gap<br>& objective"| C["Claude<br>Research Assistant"]
+        C <-->|"Tool use/result"| D["MCP Tools<br>- Web Search<br>- Crawler"]
+        C -->|"Findings &<br>sources"| E["Observations<br>Agent"]
         E --> |"Thoughts on findings<br>and research strategy"| B
     end
 
@@ -119,6 +153,8 @@ Edit the `.env` file to add your OpenAI, Serper and other settings as needed, e.
 OPENAI_API_KEY=<your_key>
 SEARCH_PROVIDER=serper  # or set to openai
 SERPER_API_KEY=<your_key>
+ANTHROPIC_API_KEY=<your_key>  # Required for Claude
+USE_CLAUDE=true  # Set to true to use Claude with MCP
 ```
 
 ## Usage
@@ -131,14 +167,22 @@ import asyncio
 from deep_researcher import IterativeResearcher, DeepResearcher
 
 # Run the IterativeResearcher for simple queries
-researcher = IterativeResearcher(max_iterations=5, max_time_minutes=5)
+researcher = IterativeResearcher(
+    max_iterations=5, 
+    max_time_minutes=5,
+    use_claude=True  # Enable Claude with MCP
+)
 query = "Provide a comprehensive overview of quantum computing"
 report = asyncio.run(
     researcher.run(query, output_length="5 pages")
 )
 
 # Run the DeepResearcher for more lengthy and structured reports
-researcher = DeepResearcher(max_iterations=3, max_time_minutes=5)
+researcher = DeepResearcher(
+    max_iterations=3, 
+    max_time_minutes=5,
+    use_claude=True  # Enable Claude with MCP
+)
 report = asyncio.run(
     researcher.run(query)
 )
@@ -152,13 +196,13 @@ Run the research assistant from the command line.
 
 If you've installed via `pip`:
 ```sh
-deep-researcher --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10 --verbose
+deep-researcher --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10 --verbose --use-claude
 ```
 
 Or if you've cloned the GitHub repo:
 
 ```sh
-python -m deep_researcher.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10 --verbose
+python -m deep_researcher.main --mode deep --query "Provide a comprehensive overview of quantum computing" --max-iterations 3 --max-time 10 --verbose --use-claude
 ```
 
 Parameters:
@@ -174,6 +218,8 @@ Boolean Flags:
 
 - `--verbose`: Prints the research progress to console
 - `--tracing`: Traces the workflow on the OpenAI platform (only works for OpenAI models)
+- `--use-claude`: Use Claude with MCP for more streamlined tool usage
+- `--save-to-file`: Save the report to a markdown file
 
 ## Architecture
 

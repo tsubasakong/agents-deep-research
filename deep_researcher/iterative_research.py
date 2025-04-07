@@ -1,14 +1,17 @@
 from __future__ import annotations
 import asyncio
 import time
+import os
 from typing import Dict, List, Optional
-from agents import custom_span, gen_trace_id, trace
+from agents import custom_span, gen_trace_id, trace, Agent, Runner
+from agents.mcp import MCPServerStdio
 from .agents.baseclass import ResearchRunner
 from .agents.writer_agent import writer_agent
 from .agents.knowledge_gap_agent import KnowledgeGapOutput, knowledge_gap_agent
 from .agents.tool_selector_agent import AgentTask, AgentSelectionPlan, tool_selector_agent
 from .agents.thinking_agent import thinking_agent
 from .agents.tool_agents import TOOL_AGENTS, ToolAgentOutput
+from .agents.research_assistant import create_research_assistant
 from pydantic import BaseModel, Field
 
 
@@ -126,7 +129,8 @@ class IterativeResearcher:
         max_iterations: int = 5,
         max_time_minutes: int = 10,
         verbose: bool = True,
-        tracing: bool = False
+        tracing: bool = False,
+        use_claude: bool = False
     ):
         self.max_iterations: int = max_iterations
         self.max_time_minutes: int = max_time_minutes
@@ -136,6 +140,9 @@ class IterativeResearcher:
         self.should_continue: bool = True
         self.verbose: bool = verbose
         self.tracing: bool = tracing
+        self.use_claude: bool = use_claude or os.getenv("USE_CLAUDE", "").lower() == "true"
+        self.mcp_server = None
+        self.research_assistant = None
         
     async def run(
             self, 
@@ -155,7 +162,58 @@ class IterativeResearcher:
 
         self._log_message("=== Starting Iterative Research Workflow ===")
         
+        # Check if Claude is enabled and Anthropic API key is set
+        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if self.use_claude and (not anthropic_api_key or anthropic_api_key.startswith("<") or anthropic_api_key.endswith(">")):
+            self._log_message("WARNING: Using Claude with MCP was requested, but no valid Anthropic API key was found.")
+            self._log_message("Falling back to the standard research flow without Claude.")
+            self.use_claude = False
+        
         # Iterative research loop
+        if self.use_claude:
+            self._log_message("Using Claude with MCP for research")
+            # Use async context manager for MCP server
+            async with MCPServerStdio(
+                        params={
+                            "command": "/Users/frankhe/.local/bin/mcp-proxy",
+                            "args": ["https://sequencer-v2.heurist.xyz/toolf22e9e8c/sse"],
+                        },
+                        # Enable tools caching per the OpenAI SDK documentation
+                        cache_tools_list=True,
+                        name="MCP Proxy Server"
+                ) as mcp_server:
+                # Create the research assistant
+                self.research_assistant = create_research_assistant()
+                # Add MCP server to the research assistant
+                self.research_assistant.mcp_servers = [mcp_server]
+                
+                # List tools to verify they're available
+                tools = await mcp_server.list_tools()
+                self._log_message(f"MCP server started with {len(tools)} tools")
+                
+                # Run the iterative research loop
+                report = await self._run_research_loop(query, output_length, output_instructions, background_context, mcp_server)
+        else:
+            # Run the iterative research loop without MCP
+            report = await self._run_research_loop(query, output_length, output_instructions, background_context)
+        
+        elapsed_time = time.time() - self.start_time
+        self._log_message(f"IterativeResearcher completed in {int(elapsed_time // 60)} minutes and {int(elapsed_time % 60)} seconds after {self.iteration} iterations.")
+        
+        if self.tracing:
+            workflow_trace.finish(reset_current=True)
+
+        return report
+
+    async def _run_research_loop(
+            self, 
+            query: str,
+            output_length: str = "",
+            output_instructions: str = "",
+            background_context: str = "",
+            mcp_server = None
+        ) -> str:
+        """Run the iterative research loop."""
         while self.should_continue and self._check_constraints():
             self.iteration += 1
             self._log_message(f"\n=== Starting Iteration {self.iteration} ===")
@@ -172,26 +230,310 @@ class IterativeResearcher:
             # Check if we should continue or break the loop
             if not evaluation.research_complete:
                 next_gap = evaluation.outstanding_gaps[0]
+                
+                if self.use_claude and mcp_server:
+                    # Use Claude with MCP for research
+                    await self._claude_research(next_gap, query, mcp_server, background_context=background_context)
+                else:
+                    # 3. Select agents to address knowledge gap (original flow)
+                    selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
 
-                # 3. Select agents to address knowledge gap
-                selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
-
-                # 4. Run the selected agents to gather information
-                results: Dict[str, ToolAgentOutput] = await self._execute_tools(selection_plan.tasks)
+                    # 4. Run the selected agents to gather information
+                    results: Dict[str, ToolAgentOutput] = await self._execute_tools(selection_plan.tasks)
             else:
                 self.should_continue = False
                 self._log_message("=== IterativeResearcher Marked As Complete - Finalizing Output ===")
         
         # Create final report
-        report = await self._create_final_report(query, length=output_length, instructions=output_instructions)
+        return await self._create_final_report(query, length=output_length, instructions=output_instructions)
+    
+    async def _claude_research(self, gap: str, query: str, mcp_server, background_context: str = ""):
+        """Use Claude with MCP to research a knowledge gap."""
+        self._log_message(f"Claude researching gap: {gap}")
         
-        elapsed_time = time.time() - self.start_time
-        self._log_message(f"IterativeResearcher completed in {int(elapsed_time // 60)} minutes and {int(elapsed_time % 60)} seconds after {self.iteration} iterations.")
+        # Set the gap in the conversation
+        self.conversation.set_latest_gap(gap)
+        self._log_message(self.conversation.latest_task_string())
         
-        if self.tracing:
-            workflow_trace.finish(reset_current=True)
-
-        return report
+        # Prepare the user message for Claude
+        previous_findings = '\n'.join(self.conversation.get_all_findings()) or "No previous findings."
+        background = f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""
+        
+        user_message = f"""
+        KNOWLEDGE GAP: {gap}
+        
+        ORIGINAL QUERY: {query}
+        
+        {background}
+        
+        PREVIOUS FINDINGS: 
+        {previous_findings}
+        """
+        
+        # Create a placeholder for the raw response
+        raw_response = ""
+        
+        try:
+            # Run Claude with MCP tools 
+            result = await Runner.run(
+                self.research_assistant,
+                user_message
+            )
+            
+            # Try to parse as structured output
+            try:
+                # Save the raw response in case we need it for error handling
+                raw_response = result.final_output
+                
+                # Extract the output and sources
+                output = result.final_output_as(ToolAgentOutput)
+                findings_text = output.output
+                sources_list = output.sources
+                
+                self._log_message("<debug>Successfully parsed Claude's response as structured JSON</debug>")
+            except Exception as parse_error:
+                self._log_message(f"<debug>Failed to parse Claude's response as structured JSON: {str(parse_error)}</debug>")
+                # Fall back to custom parsing
+                findings_text = self._extract_findings_from_text(raw_response)
+                sources_list = self._extract_sources_from_text(raw_response)
+                
+                # Create a properly formatted output
+                output = ToolAgentOutput(
+                    output=findings_text,
+                    sources=sources_list
+                )
+            
+            # Add findings to conversation
+            self.conversation.set_latest_findings([findings_text])
+            
+            # Log the action that Claude took
+            tool_calls = [
+                f"[Agent] Claude ResearchAssistant [Gap] {gap}"
+            ]
+            self.conversation.set_latest_tool_calls(tool_calls)
+            self._log_message(self.conversation.latest_action_string())
+            
+            # Log the findings
+            self._log_message(f"<findings>\n{findings_text}\n\nSources: {sources_list}\n</findings>")
+            
+            return output
+        except Exception as e:
+            # Handle the case where Claude's response processing failed completely
+            self._log_message(f"Error processing Claude's response: {str(e)}")
+            
+            # Use our robust parsing functions to extract what we can
+            findings_text = self._extract_findings_from_text(raw_response)
+            sources = self._extract_sources_from_text(raw_response)
+            
+            # If extraction failed and we got empty findings, create a fallback message
+            if not findings_text.strip():
+                findings_text = f"Error processing response for knowledge gap: {gap}. The research assistant encountered an issue with formatting the output."
+            
+            # Create a properly formatted output
+            output = ToolAgentOutput(
+                output=findings_text,
+                sources=sources
+            )
+            
+            # Add findings to conversation
+            self.conversation.set_latest_findings([findings_text])
+            
+            # Log the action that Claude took
+            self.conversation.set_latest_tool_calls([
+                f"[Agent] Claude ResearchAssistant [Gap] {gap}"
+            ])
+            self._log_message(self.conversation.latest_action_string())
+            
+            # Log the findings
+            self._log_message(f"<findings>\n{findings_text}\n\nSources: {sources}\n</findings>")
+            
+            return output
+    
+    def _extract_findings_from_text(self, text: str) -> str:
+        """Extract findings from Claude's raw text response."""
+        import json
+        import re
+        
+        # If text is None or empty, return a default message
+        if not text or not isinstance(text, str):
+            return "No valid findings could be extracted from the response."
+        
+        # =================================================================
+        # Strategy 1: Look for complete valid JSON and extract "output" field
+        # =================================================================
+        
+        # Remove code block markers if present
+        cleaned_text = re.sub(r'```(?:json)?\s*(.*?)\s*```', r'\1', text, flags=re.DOTALL)
+        
+        # Try to find valid JSON objects in the text
+        json_candidates = []
+        
+        # First, try to find the most obvious JSON object (everything between { and })
+        json_match = re.search(r'(\{.*\})', cleaned_text, re.DOTALL)
+        if json_match:
+            json_candidates.append(json_match.group(1))
+        
+        # Then try to find smaller JSON objects that might be valid
+        json_matches = re.findall(r'(\{[^{]*?\})', cleaned_text, re.DOTALL)
+        json_candidates.extend(json_matches)
+        
+        # Try each candidate
+        for json_str in json_candidates:
+            try:
+                data = json.loads(json_str.strip())
+                if isinstance(data, dict) and "output" in data:
+                    return data["output"]
+            except json.JSONDecodeError:
+                continue
+        
+        # =================================================================
+        # Strategy 2: Look for the "output" field using regex
+        # =================================================================
+        output_patterns = [
+            r'"output"\s*:\s*"(.*?)"(?=\s*,|\s*\})', # Standard JSON format
+            r'"output"\s*:\s*"(.+?)"(?=\s*,|\s*\})', # Multi-line output
+            r'"output"\s*:\s*"(.*?)"', # Simple pattern
+        ]
+        
+        for pattern in output_patterns:
+            match = re.search(pattern, cleaned_text, re.DOTALL)
+            if match:
+                # Unescape JSON string escapes
+                output = match.group(1)
+                output = output.replace('\\"', '"').replace('\\\\', '\\')
+                return output
+        
+        # =================================================================
+        # Strategy 3: Look for content in specific sections
+        # =================================================================
+        section_patterns = [
+            r'(?:findings|output|results):\s*(.*?)(?:(?:sources|references):|$)',
+            r'<findings>(.*?)</findings>',
+            r'\*\*findings\*\*\s*:(.*?)(?:\*\*sources\*\*|$)',
+        ]
+        
+        for pattern in section_patterns:
+            match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+            if match:
+                return match.group(1).strip()
+        
+        # =================================================================
+        # Strategy 4: If nothing else worked, return cleaned text
+        # =================================================================
+        
+        # Remove any obvious non-findings content
+        result = text
+        
+        # Remove content about tool usage
+        result = re.sub(r'I(?:\'ll| will| need to)? use the (web_search|crawl_website) tool.*?\n', '', result, flags=re.IGNORECASE)
+        result = re.sub(r'Let me (search|look|find|research).*?\n', '', result, flags=re.IGNORECASE)
+        
+        # Remove introductory phrases
+        result = re.sub(r'^(Here\'s what I found about|Based on my research|According to my findings|My findings on).*?\n', '', result, flags=re.IGNORECASE)
+        result = re.sub(r'^(Here are|These are) (my|the) (findings|results).*?\n', '', result, flags=re.IGNORECASE)
+        
+        # Remove section headers and formatting
+        result = re.sub(r'#+\s*Sources:?.*?$', '', result, flags=re.MULTILINE)
+        result = re.sub(r'\*\*Sources:?\*\*.*?$', '', result, flags=re.MULTILINE)
+        result = re.sub(r'Sources:?(\s*\n.*?)+$', '', result, flags=re.DOTALL)
+        
+        return result.strip()
+    
+    def _extract_sources_from_text(self, text: str) -> List[str]:
+        """Extract sources from Claude's raw text response."""
+        import json
+        import re
+        
+        sources = []
+        
+        # If text is None or empty, return empty sources
+        if not text or not isinstance(text, str):
+            return sources
+        
+        # =================================================================
+        # Strategy 1: Look for complete valid JSON and extract "sources" field
+        # =================================================================
+        
+        # Remove code block markers if present
+        cleaned_text = re.sub(r'```(?:json)?\s*(.*?)\s*```', r'\1', text, flags=re.DOTALL)
+        
+        # Try to find valid JSON objects in the text
+        json_candidates = []
+        
+        # First, try to find the most obvious JSON object (everything between { and })
+        json_match = re.search(r'(\{.*\})', cleaned_text, re.DOTALL)
+        if json_match:
+            json_candidates.append(json_match.group(1))
+        
+        # Then try to find smaller JSON objects that might be valid
+        json_matches = re.findall(r'(\{[^{]*?\})', cleaned_text, re.DOTALL)
+        json_candidates.extend(json_matches)
+        
+        # Try each candidate
+        for json_str in json_candidates:
+            try:
+                data = json.loads(json_str.strip())
+                if isinstance(data, dict) and "sources" in data:
+                    if isinstance(data["sources"], list):
+                        return [str(s) for s in data["sources"]]
+            except json.JSONDecodeError:
+                continue
+        
+        # =================================================================
+        # Strategy 2: Look for the "sources" array using regex
+        # =================================================================
+        
+        # Try to extract the sources array
+        sources_array_pattern = r'"sources"\s*:\s*\[(.*?)\]'
+        sources_match = re.search(sources_array_pattern, cleaned_text, re.DOTALL)
+        if sources_match:
+            array_content = sources_match.group(1)
+            # Find quoted strings in the array
+            quoted_sources = re.findall(r'"(.*?)"', array_content)
+            if quoted_sources:
+                sources.extend([s.replace('\\"', '"') for s in quoted_sources])
+                return sources
+        
+        # =================================================================
+        # Strategy 3: Look for sources in dedicated sections
+        # =================================================================
+        
+        # Try to find a "Sources:" section
+        section_patterns = [
+            r'(?:^|\n)(?:##+\s*|\*\*)?sources(?:\**|:)+\s*((?:.+\n?)+)',
+            r'(?:^|\n)(?:##+\s*|\*\*)?references(?:\**|:)+\s*((?:.+\n?)+)',
+            r'(?:^|\n)sources:\s*\n((?:.+\n?)+)',
+        ]
+        
+        for pattern in section_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                section = match.group(1)
+                # Extract URLs from the section
+                urls = re.findall(r'(https?://[^\s\n"\'<>()[\]]+)', section)
+                if urls:
+                    sources.extend(urls)
+        
+        # =================================================================
+        # Strategy 4: Extract all URLs from the text as a last resort
+        # =================================================================
+        if not sources:
+            # Extract any URLs in the text
+            urls = re.findall(r'(https?://[^\s\n"\'<>()[\]]+)', text)
+            sources.extend(urls)
+        
+        # =================================================================
+        # Clean and deduplicate the sources
+        # =================================================================
+        
+        # Clean up URLs (remove trailing punctuation)
+        sources = [re.sub(r'[.,;:\'")\]]+$', '', url) for url in sources]
+        
+        # Remove duplicates while maintaining order
+        seen = set()
+        sources = [url for url in sources if not (url in seen or seen.add(url))]
+        
+        return sources
     
     def _check_constraints(self) -> bool:
         """Check if we've exceeded our constraints (max iterations or time)."""

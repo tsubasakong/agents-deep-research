@@ -21,6 +21,7 @@ MAIN_MODEL_PROVIDER=os.getenv("MAIN_MODEL_PROVIDER", "openai")
 MAIN_MODEL=os.getenv("MAIN_MODEL", "gpt-4o")
 FAST_MODEL_PROVIDER=os.getenv("FAST_MODEL_PROVIDER", "openai")
 FAST_MODEL=os.getenv("FAST_MODEL", "gpt-4o-mini")
+CLAUDE_MODEL=os.getenv("CLAUDE_MODEL", "claude-3-7-sonnet-20250219")
 
 supported_providers = ["openai", "deepseek", "openrouter", "gemini", "anthropic", "perplexity", "huggingface", "local"]
 
@@ -116,6 +117,18 @@ fast_model = provider_mapping[FAST_MODEL_PROVIDER]["model"](
     openai_client=fast_client
 )
 
+# ------- SET UP CLAUDE MODEL -------
+
+claude_client = AsyncOpenAI(
+    api_key=ANTHROPIC_API_KEY,
+    base_url="https://api.anthropic.com/v1/"
+)
+
+claude_model = OpenAIChatCompletionsModel(
+    model=CLAUDE_MODEL,
+    openai_client=claude_client
+)
+
 
 def get_base_url(model: Union[OpenAIChatCompletionsModel, OpenAIResponsesModel]) -> str:
     """Utility function to get the base URL for a given model"""
@@ -128,4 +141,4 @@ def model_supports_structured_output(model: Union[OpenAIChatCompletionsModel, Op
     return any(provider in get_base_url(model) for provider in structured_output_providers)
 
 
-__all__ = ["reasoning_model", "main_model", "fast_model", "get_base_url", "model_supports_structured_output"]
+__all__ = ["reasoning_model", "main_model", "fast_model", "claude_model", "get_base_url", "model_supports_structured_output"]
