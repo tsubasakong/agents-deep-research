@@ -32,7 +32,7 @@ class DeepResearcher:
             from agents import set_tracing_disabled
             set_tracing_disabled(True)
 
-    async def run(self, query: str) -> str:
+    async def run(self, query: str, output_length: str = "", output_instructions: str = "", background_context: str = "") -> str:
         """Run the deep research workflow"""
         start_time = time.time()
 
@@ -44,9 +44,16 @@ class DeepResearcher:
 
         # First build the report plan which outlines the sections and compiles any relevant background context on the query
         report_plan: ReportPlan = await self._build_report_plan(query)
+        
+        # Add any additional background context provided
+        if background_context:
+            if report_plan.background_context:
+                report_plan.background_context += f"\n\nAdditional Context:\n{background_context}"
+            else:
+                report_plan.background_context = background_context
 
         # Run the independent research loops concurrently for each section and gather the results
-        research_results: List[str] = await self._run_research_loops(report_plan)
+        research_results: List[str] = await self._run_research_loops(report_plan, output_length, output_instructions)
 
         # Create the final report from the original report plan and the drafts of each section
         final_report: str = await self._create_final_report(query, report_plan, research_results)
@@ -89,7 +96,9 @@ class DeepResearcher:
 
     async def _run_research_loops(
         self, 
-        report_plan: ReportPlan
+        report_plan: ReportPlan,
+        output_length: str = "",
+        output_instructions: str = ""
     ) -> List[str]:
         """For a given ReportPlan, run a research loop concurrently for each section and gather the results"""
         async def run_research_for_section(section: ReportPlanSection):
@@ -103,8 +112,8 @@ class DeepResearcher:
             )
             args = {
                 "query": section.key_question,
-                "output_length": "",
-                "output_instructions": "",
+                "output_length": output_length,
+                "output_instructions": output_instructions,
                 "background_context": report_plan.background_context,
             }
             
