@@ -129,6 +129,18 @@ claude_model = OpenAIChatCompletionsModel(
     openai_client=claude_client
 )
 
+# ------- SET UP OPENAI MODEL FOR MCP -------
+
+openai_client = AsyncOpenAI(
+    api_key=OPENAI_API_KEY,
+    base_url=None  # Use the default OpenAI base URL
+)
+
+openai_model = OpenAIResponsesModel(
+    model="gpt-4o",  # Default to GPT-4o for MCP
+    openai_client=openai_client
+)
+
 
 def get_base_url(model: Union[OpenAIChatCompletionsModel, OpenAIResponsesModel]) -> str:
     """Utility function to get the base URL for a given model"""
@@ -141,4 +153,4 @@ def model_supports_structured_output(model: Union[OpenAIChatCompletionsModel, Op
     return any(provider in get_base_url(model) for provider in structured_output_providers)
 
 
-__all__ = ["reasoning_model", "main_model", "fast_model", "claude_model", "get_base_url", "model_supports_structured_output"]
+__all__ = ["reasoning_model", "main_model", "fast_model", "claude_model", "openai_model", "get_base_url", "model_supports_structured_output"]

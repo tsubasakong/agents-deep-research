@@ -13,6 +13,7 @@ from .agents.thinking_agent import thinking_agent
 from .agents.tool_agents import TOOL_AGENTS, ToolAgentOutput
 from .agents.research_assistant import create_research_assistant
 from pydantic import BaseModel, Field
+from .agents.utils.parse_output import parse_json_output, OutputParserError
 
 
 class IterationData(BaseModel):
@@ -130,7 +131,8 @@ class IterativeResearcher:
         max_time_minutes: int = 10,
         verbose: bool = True,
         tracing: bool = False,
-        use_claude: bool = False
+        use_mcp: bool = False,
+        model_name: str = "claude"
     ):
         self.max_iterations: int = max_iterations
         self.max_time_minutes: int = max_time_minutes
@@ -140,7 +142,8 @@ class IterativeResearcher:
         self.should_continue: bool = True
         self.verbose: bool = verbose
         self.tracing: bool = tracing
-        self.use_claude: bool = use_claude or os.getenv("USE_CLAUDE", "").lower() == "true"
+        self.use_mcp: bool = use_mcp or os.getenv("USE_MCP", "").lower() == "true"
+        self.model_name: str = model_name or os.getenv("MODEL_NAME", "claude")
         self.mcp_server = None
         self.research_assistant = None
         
@@ -162,16 +165,24 @@ class IterativeResearcher:
 
         self._log_message("=== Starting Iterative Research Workflow ===")
         
-        # Check if Claude is enabled and Anthropic API key is set
-        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY", "")
-        if self.use_claude and (not anthropic_api_key or anthropic_api_key.startswith("<") or anthropic_api_key.endswith(">")):
-            self._log_message("WARNING: Using Claude with MCP was requested, but no valid Anthropic API key was found.")
-            self._log_message("Falling back to the standard research flow without Claude.")
-            self.use_claude = False
+        # Check if MCP is enabled and API key is set for selected model
+        api_key = ""
+        if self.model_name == "claude":
+            api_key = os.getenv("ANTHROPIC_API_KEY", "")
+            if self.use_mcp and (not api_key or api_key.startswith("<") or api_key.endswith(">")):
+                self._log_message("WARNING: Using Claude with MCP was requested, but no valid Anthropic API key was found.")
+                self._log_message("Falling back to the standard research flow without MCP.")
+                self.use_mcp = False
+        else:
+            api_key = os.getenv("OPENAI_API_KEY", "")
+            if self.use_mcp and (not api_key or api_key.startswith("<") or api_key.endswith(">")):
+                self._log_message("WARNING: Using OpenAI with MCP was requested, but no valid OpenAI API key was found.")
+                self._log_message("Falling back to the standard research flow without MCP.")
+                self.use_mcp = False
         
         # Iterative research loop
-        if self.use_claude:
-            self._log_message("Using Claude with MCP for research")
+        if self.use_mcp:
+            self._log_message(f"Using {self.model_name.capitalize()} with MCP for research")
             # Use async context manager for MCP server
             async with MCPServerStdio(
                         params={
@@ -183,7 +194,7 @@ class IterativeResearcher:
                         name="MCP Proxy Server"
                 ) as mcp_server:
                 # Create the research assistant
-                self.research_assistant = create_research_assistant()
+                self.research_assistant = create_research_assistant(model_name=self.model_name)
                 # Add MCP server to the research assistant
                 self.research_assistant.mcp_servers = [mcp_server]
                 
@@ -231,9 +242,9 @@ class IterativeResearcher:
             if not evaluation.research_complete:
                 next_gap = evaluation.outstanding_gaps[0]
                 
-                if self.use_claude and mcp_server:
-                    # Use Claude with MCP for research
-                    await self._claude_research(next_gap, query, mcp_server, background_context=background_context)
+                if self.use_mcp and mcp_server:
+                    # Use MCP for research
+                    await self._mcp_research(next_gap, query, mcp_server, background_context=background_context)
                 else:
                     # 3. Select agents to address knowledge gap (original flow)
                     selection_plan: AgentSelectionPlan = await self._select_agents(next_gap, query, background_context=background_context)
@@ -247,15 +258,15 @@ class IterativeResearcher:
         # Create final report
         return await self._create_final_report(query, length=output_length, instructions=output_instructions)
     
-    async def _claude_research(self, gap: str, query: str, mcp_server, background_context: str = ""):
-        """Use Claude with MCP to research a knowledge gap."""
-        self._log_message(f"Claude researching gap: {gap}")
+    async def _mcp_research(self, gap: str, query: str, mcp_server, background_context: str = ""):
+        """Use model with MCP to research a knowledge gap."""
+        self._log_message(f"{self.model_name.capitalize()} researching gap: {gap}")
         
         # Set the gap in the conversation
         self.conversation.set_latest_gap(gap)
         self._log_message(self.conversation.latest_task_string())
         
-        # Prepare the user message for Claude
+        # Prepare the user message for model
         previous_findings = '\n'.join(self.conversation.get_all_findings()) or "No previous findings."
         background = f"BACKGROUND CONTEXT:\n{background_context}" if background_context else ""
         
@@ -274,41 +285,61 @@ class IterativeResearcher:
         raw_response = ""
         
         try:
-            # Run Claude with MCP tools 
+            # Run model with MCP tools 
             result = await Runner.run(
                 self.research_assistant,
                 user_message
             )
             
+            # Save the raw response in case we need it for error handling
+            raw_response = result.final_output
+            self._log_message(f"<debug>Raw response: {raw_response}</debug>")
+            
             # Try to parse as structured output
             try:
-                # Save the raw response in case we need it for error handling
-                raw_response = result.final_output
-                
-                # Extract the output and sources
+                # First try to use the built-in parsing
                 output = result.final_output_as(ToolAgentOutput)
                 findings_text = output.output
                 sources_list = output.sources
                 
-                self._log_message("<debug>Successfully parsed Claude's response as structured JSON</debug>")
+                self._log_message("<debug>Successfully parsed model's response as structured JSON</debug>")
             except Exception as parse_error:
-                self._log_message(f"<debug>Failed to parse Claude's response as structured JSON: {str(parse_error)}</debug>")
-                # Fall back to custom parsing
-                findings_text = self._extract_findings_from_text(raw_response)
-                sources_list = self._extract_sources_from_text(raw_response)
+                self._log_message(f"<debug>Failed to parse model's response using default parser: {str(parse_error)}</debug>")
                 
-                # Create a properly formatted output
-                output = ToolAgentOutput(
-                    output=findings_text,
-                    sources=sources_list
-                )
+                # Try using the robust JSON parser from parse_output.py
+                try:
+                    json_data = parse_json_output(raw_response)
+                    if isinstance(json_data, dict):
+                        # Extract output and sources if they exist in the JSON
+                        findings_text = json_data.get('output', '')
+                        sources_list = json_data.get('sources', [])
+                        
+                        # Create a properly formatted output
+                        output = ToolAgentOutput(
+                            output=findings_text,
+                            sources=sources_list
+                        )
+                        self._log_message("<debug>Successfully parsed model's response using parse_output.py</debug>")
+                    else:
+                        raise OutputParserError("JSON does not contain expected fields", json_data)
+                except Exception as json_error:
+                    self._log_message(f"<debug>Failed to parse model's response as JSON: {str(json_error)}</debug>")
+                    # Fall back to custom extraction methods
+                    findings_text = self._extract_findings_from_text(raw_response)
+                    sources_list = self._extract_sources_from_text(raw_response)
+                    
+                    # Create a properly formatted output
+                    output = ToolAgentOutput(
+                        output=findings_text,
+                        sources=sources_list
+                    )
             
             # Add findings to conversation
             self.conversation.set_latest_findings([findings_text])
             
-            # Log the action that Claude took
+            # Log the action that model took
             tool_calls = [
-                f"[Agent] Claude ResearchAssistant [Gap] {gap}"
+                f"[Agent] {self.model_name.capitalize()} ResearchAssistant [Gap] {gap}"
             ]
             self.conversation.set_latest_tool_calls(tool_calls)
             self._log_message(self.conversation.latest_action_string())
@@ -318,8 +349,8 @@ class IterativeResearcher:
             
             return output
         except Exception as e:
-            # Handle the case where Claude's response processing failed completely
-            self._log_message(f"Error processing Claude's response: {str(e)}")
+            # Handle the case where model's response processing failed completely
+            self._log_message(f"Error processing model's response: {str(e)}")
             
             # Use our robust parsing functions to extract what we can
             findings_text = self._extract_findings_from_text(raw_response)
@@ -338,9 +369,9 @@ class IterativeResearcher:
             # Add findings to conversation
             self.conversation.set_latest_findings([findings_text])
             
-            # Log the action that Claude took
+            # Log the action that model took
             self.conversation.set_latest_tool_calls([
-                f"[Agent] Claude ResearchAssistant [Gap] {gap}"
+                f"[Agent] {self.model_name.capitalize()} ResearchAssistant [Gap] {gap}"
             ])
             self._log_message(self.conversation.latest_action_string())
             
@@ -350,7 +381,7 @@ class IterativeResearcher:
             return output
     
     def _extract_findings_from_text(self, text: str) -> str:
-        """Extract findings from Claude's raw text response."""
+        """Extract findings from model's raw text response."""
         import json
         import re
         
@@ -440,7 +471,7 @@ class IterativeResearcher:
         return result.strip()
     
     def _extract_sources_from_text(self, text: str) -> List[str]:
-        """Extract sources from Claude's raw text response."""
+        """Extract sources from model's raw text response."""
         import json
         import re
         

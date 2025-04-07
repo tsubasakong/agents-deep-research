@@ -1,19 +1,19 @@
 """
-Research Assistant Agent that uses Claude with MCP tools.
+Research Assistant Agent that uses LLMs (Claude or OpenAI) with MCP tools.
 
 This agent replaces the previous ToolSelectorAgent + ToolAgents workflow with a single
-Claude agent that can use tools via the Model Context Protocol (MCP).
+LLM agent that can use tools via the Model Context Protocol (MCP).
 """
 
-from typing import List
+from typing import List, Optional
 from ..agents.tool_agents import ToolAgentOutput
-from ..llm_client import claude_model, model_supports_structured_output, get_base_url
+from ..llm_client import claude_model, openai_model, model_supports_structured_output, get_base_url
 from ..agents.baseclass import ResearchAgent
 from ..agents.utils.parse_output import create_type_parser
 from agents import Agent
 
-# Instructions for the Claude Research Assistant
-CLAUDE_INSTRUCTIONS = """You are a research assistant that specializes in deep research on any topic.
+# Instructions for the Research Assistant
+ASSISTANT_INSTRUCTIONS = """You are a research assistant that specializes in deep research on any topic.
 
 OBJECTIVE:
 Given a knowledge gap, your goal is to use the available tools to thoroughly research and address the gap.
@@ -75,11 +75,20 @@ OUTPUT EXAMPLE:
 {"output":"Climate change is primarily caused by the following factors: 1) Greenhouse gas emissions from burning fossil fuels like coal, oil, and natural gas, which trap heat in the atmosphere. 2) Deforestation, which reduces the Earth's capacity to absorb carbon dioxide. 3) Industrial processes and agriculture, particularly livestock farming which produces methane. 4) Transportation emissions from vehicles powered by fossil fuels. The IPCC has concluded with over 95% certainty that human activities are the dominant cause of observed warming since the mid-20th century.","sources":["https://climate.nasa.gov/causes/","https://www.un.org/en/climatechange/science/causes-effects-climate-change","https://www.ipcc.ch/report/ar6/wg1/"]}
 """
 
-def create_research_assistant() -> Agent:
-    """Create a Claude-powered research assistant with MCP tool access."""
+def create_research_assistant(model_name: str = "claude") -> Agent:
+    """Create a research assistant with MCP tool access.
+    
+    Args:
+        model_name: The name of the model to use ("claude" or "openai")
+    
+    Returns:
+        Agent: A configured research assistant agent
+    """
+    # Select the appropriate model
+    model = claude_model if model_name == "claude" else openai_model
+    
     return Agent(
         name="ResearchAssistant",
-        instructions=CLAUDE_INSTRUCTIONS,
-        model=claude_model,
-        output_type=ToolAgentOutput if model_supports_structured_output(claude_model) else None
+        instructions=ASSISTANT_INSTRUCTIONS,
+        model=model,
     ) 

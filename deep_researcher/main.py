@@ -35,15 +35,18 @@ async def main():
     parser.add_argument("--iterations", type=int, default=5, help="Maximum number of research iterations")
     parser.add_argument("--max-iterations", type=int, default=5, help="Alias for --iterations")
     parser.add_argument("--max-time", type=int, default=10, help="Maximum time in minutes")
-    parser.add_argument("--model", type=str, default="simple", choices=["simple", "complex"], help="Model type to use")
+    parser.add_argument("--mode", type=str, default="simple", choices=["simple", "deep"], help="Research mode to use")
     parser.add_argument("--output-length", type=str, default="", help="Description of the desired output length")
     parser.add_argument("--output-instructions", type=str, default="", help="Instructions for formatting the final report")
     parser.add_argument("--context", type=str, default="", help="Additional context to provide for the research")
     parser.add_argument("--background", type=str, default="", help="Alias for --context")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--trace", action="store_true", help="Enable tracing with the OpenAI SDK")
-    parser.add_argument("--use-claude", action="store_true", help="Use Claude with MCP for research")
+    parser.add_argument("--use-claude", action="store_true", help="[DEPRECATED] Use Claude with MCP (use --use-mcp --model-name claude instead)")
+    parser.add_argument("--use-mcp", action="store_true", help="Use MCP for research with any supported model")
+    parser.add_argument("--model-name", type=str, default="claude", choices=["claude", "openai"], help="Model to use with MCP")
     parser.add_argument("--output", type=str, default="-", help="Output file path (- for stdout)")
+    parser.add_argument("--save-to-file", action="store_true", help="Save the report to a timestamped file")
     args = parser.parse_args()
 
     # Check that a query was provided
@@ -55,19 +58,37 @@ async def main():
     
     # Support both --context and --background
     background_context = args.context if args.context else args.background
+    
+    # Handle deprecated use-claude flag
+    use_mcp = args.use_mcp or args.use_claude
+    model_name = args.model_name
+    if args.use_claude:
+        print("WARNING: --use-claude is deprecated. Use --use-mcp --model-name claude instead.")
+        model_name = "claude"
 
     # Initialize the deep researcher
     try:
-        manager = IterativeResearcher(
-            max_iterations=max_iterations,
-            max_time_minutes=args.max_time,
-            verbose=args.verbose,
-            tracing=args.trace,
-            use_claude=args.use_claude
-        )
+        if args.mode == "simple":
+            researcher = IterativeResearcher(
+                max_iterations=max_iterations,
+                max_time_minutes=args.max_time,
+                verbose=args.verbose,
+                tracing=args.trace,
+                use_mcp=use_mcp,
+                model_name=model_name
+            )
+        else:  # deep mode
+            researcher = DeepResearcher(
+                max_iterations=max_iterations,
+                max_time_minutes=args.max_time,
+                verbose=args.verbose,
+                tracing=args.trace,
+                use_mcp=use_mcp,
+                model_name=model_name
+            )
         
         # Run the research process
-        report = await manager.run(
+        report = await researcher.run(
             query=args.query,
             output_length=args.output_length,
             output_instructions=args.output_instructions,
@@ -75,11 +96,16 @@ async def main():
         )
         
         # Write the report to stdout or a file
+        if args.save_to_file:
+            filename = save_report_to_file(report, args.query)
+            print(f"Report saved to {filename}")
+            
         if args.output == "-":
             print(report)
         else:
             with open(args.output, "w") as f:
                 f.write(report)
+                print(f"Report saved to {args.output}")
                 
         return 0
     except Exception as e:
