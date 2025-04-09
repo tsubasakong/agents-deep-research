@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime
 import sys
+from .agents.clarification_agent import clarification_agent, ClarificationOutput
+from .agents.baseclass import ResearchRunner
 
 load_dotenv(override=True)
 
@@ -28,6 +30,39 @@ def save_report_to_file(report: str, query: str) -> str:
     
     return filename
 
+async def get_clarifications(query: str, verbose: bool = True) -> str:
+    """Ask the user clarification questions and return enhanced query."""
+    if verbose:
+        print("Generating clarification questions...")
+    
+    # Generate clarification questions
+    user_message = f"QUERY: {query}"
+    result = await ResearchRunner.run(
+        clarification_agent,
+        user_message
+    )
+    clarification_output = result.final_output_as(ClarificationOutput)
+    
+    # Display explanation and questions to the user
+    print(f"\n{clarification_output.explanation}\n")
+    
+    # Ask each question and collect responses
+    responses = []
+    for i, question in enumerate(clarification_output.clarification_questions, 1):
+        print(f"Question {i}: {question}")
+        response = input("Your answer: ").strip()
+        responses.append(f"Q: {question}\nA: {response}")
+    
+    # Create enhanced query with original query and clarifications
+    enhanced_query = f"{query}\n\nClarifications:\n" + "\n\n".join(responses)
+    
+    if verbose:
+        print("\nEnhanced query with clarifications:")
+        print(enhanced_query)
+        print()
+    
+    return enhanced_query
+
 async def main():
     """Main entry point for the deep researcher CLI."""
     parser = argparse.ArgumentParser(description="Deep Researcher CLI")
@@ -47,6 +82,7 @@ async def main():
     parser.add_argument("--model-name", type=str, default="claude", choices=["claude", "openai"], help="Model to use with MCP")
     parser.add_argument("--output", type=str, default="-", help="Output file path (- for stdout)")
     parser.add_argument("--save-to-file", action="store_true", help="Save the report to a timestamped file")
+    parser.add_argument("--skip-clarification", action="store_true", help="Skip the clarification step")
     args = parser.parse_args()
 
     # Check that a query was provided
@@ -65,6 +101,18 @@ async def main():
     if args.use_claude:
         print("WARNING: --use-claude is deprecated. Use --use-mcp --model-name claude instead.")
         model_name = "claude"
+
+    # Run the clarification step if not skipped
+    enhanced_query = args.query
+    if not args.skip_clarification:
+        try:
+            enhanced_query = await get_clarifications(args.query, args.verbose)
+        except Exception as e:
+            print(f"Error during clarification: {str(e)}", file=sys.stderr)
+            if args.verbose:
+                import traceback
+                print(traceback.format_exc(), file=sys.stderr)
+            print("Continuing with original query...", file=sys.stderr)
 
     # Initialize the deep researcher
     try:
@@ -89,7 +137,7 @@ async def main():
         
         # Run the research process
         report = await researcher.run(
-            query=args.query,
+            query=enhanced_query,
             output_length=args.output_length,
             output_instructions=args.output_instructions,
             background_context=background_context
